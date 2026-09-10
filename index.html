@@ -1,0 +1,2808 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ders Defteri</title>
+<meta name="description" content="Universite ders programi, odev ve sinav takibi, devamsizlik sayaci ve not ortalamasi.">
+<meta name="theme-color" content="#EEF0F4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E1118" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Ders Defteri">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" href="icon.png">
+<style>
+/* Claude sayfa iskeletindeki sifirlamanin karsiligi */
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0}
+img,svg{display:block;max-width:100%}
+</style>
+</head>
+<body><style>
+/* ============================================================
+   Ders Defteri — tek dosya, tek tema sistemi
+   Renkler yalnızca token olarak tanımlanır; bileşenler
+   doğrudan media/[data-theme] bloğu içinde renk almaz.
+   ============================================================ */
+
+:root{
+  /* --- açık tema (temel) --- */
+  --bg:#EEF0F4;
+  --bg-grid:#DFE3EC;
+  --surface:#FFFFFF;
+  --surface-2:#F6F7FB;
+  --line:#DCE0EA;
+  --line-soft:#E9ECF3;
+  --ink:#161B2B;
+  --ink-2:#4A5268;
+  --ink-3:#7B8397;
+  --accent:#3A34C4;
+  --accent-2:#2A25A0;
+  --accent-soft:#E7E6FB;
+  --on-accent:#FFFFFF;
+  --alert:#C0361D;
+  --alert-soft:#FAE5DF;
+  --ok:#1B7A55;
+  --ok-soft:#DDF0E8;
+  --warn:#8A5B06;
+  --warn-soft:#F8ECD4;
+  --shadow-1:0 1px 2px rgba(22,27,43,.07);
+  --shadow-2:0 1px 2px rgba(22,27,43,.06), 0 10px 28px -14px rgba(22,27,43,.30);
+  --sheet-veil:rgba(16,20,32,.42);
+
+  /* ders renkleri: yumuşak dolgu + güçlü çizgi */
+  --c0-bg:#E8E7FB; --c0-fg:#3A34C4;
+  --c1-bg:#DBF0ED; --c1-fg:#0F6F68;
+  --c2-bg:#F6E3F4; --c2-fg:#8A2D85;
+  --c3-bg:#FAE6DC; --c3-fg:#B0451F;
+  --c4-bg:#F8ECD2; --c4-fg:#845C07;
+  --c5-bg:#DDEAF8; --c5-fg:#1C5793;
+
+  --font-display:"Avenir Next","Avenir","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --font-body:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,"Helvetica Neue",sans-serif;
+  --font-book:"Iowan Old Style","Charter","Palatino Linotype",Georgia,serif;
+  --font-mono:ui-monospace,"SF Mono",Menlo,Consolas,"Courier New",monospace;
+
+  --r-sm:8px; --r-md:14px; --r-lg:20px;
+  --pad:16px;
+}
+
+/* --- sistem koyu tema (açık tema açıkça seçilmediyse) --- */
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1118;
+    --bg-grid:#191E29;
+    --surface:#161A24;
+    --surface-2:#1D222F;
+    --line:#2A3040;
+    --line-soft:#232838;
+    --ink:#E7EAF1;
+    --ink-2:#A7AEC1;
+    --ink-3:#767E95;
+    --accent:#9C97FF;
+    --accent-2:#B5B1FF;
+    --accent-soft:#242247;
+    --on-accent:#101320;
+    --alert:#FF8A6B;
+    --alert-soft:#37201A;
+    --ok:#5FD3A3;
+    --ok-soft:#122E25;
+    --warn:#EFC06E;
+    --warn-soft:#312611;
+    --shadow-1:0 1px 2px rgba(0,0,0,.40);
+    --shadow-2:0 1px 2px rgba(0,0,0,.35), 0 10px 28px -14px rgba(0,0,0,.75);
+    --sheet-veil:rgba(4,6,12,.60);
+
+    --c0-bg:#252350; --c0-fg:#A6A1FF;
+    --c1-bg:#0F312E; --c1-fg:#5FD3C4;
+    --c2-bg:#381D36; --c2-fg:#E49CDE;
+    --c3-bg:#3A2117; --c3-fg:#FF9E77;
+    --c4-bg:#32270F; --c4-fg:#EDC46A;
+    --c5-bg:#112B43; --c5-fg:#7DBEF5;
+  }
+}
+
+/* --- açıkça seçilmiş koyu tema --- */
+:root[data-theme="dark"]{
+  --bg:#0E1118;
+  --bg-grid:#191E29;
+  --surface:#161A24;
+  --surface-2:#1D222F;
+  --line:#2A3040;
+  --line-soft:#232838;
+  --ink:#E7EAF1;
+  --ink-2:#A7AEC1;
+  --ink-3:#767E95;
+  --accent:#9C97FF;
+  --accent-2:#B5B1FF;
+  --accent-soft:#242247;
+  --on-accent:#101320;
+  --alert:#FF8A6B;
+  --alert-soft:#37201A;
+  --ok:#5FD3A3;
+  --ok-soft:#122E25;
+  --warn:#EFC06E;
+  --warn-soft:#312611;
+  --shadow-1:0 1px 2px rgba(0,0,0,.40);
+  --shadow-2:0 1px 2px rgba(0,0,0,.35), 0 10px 28px -14px rgba(0,0,0,.75);
+  --sheet-veil:rgba(4,6,12,.60);
+
+  --c0-bg:#252350; --c0-fg:#A6A1FF;
+  --c1-bg:#0F312E; --c1-fg:#5FD3C4;
+  --c2-bg:#381D36; --c2-fg:#E49CDE;
+  --c3-bg:#3A2117; --c3-fg:#FF9E77;
+  --c4-bg:#32270F; --c4-fg:#EDC46A;
+  --c5-bg:#112B43; --c5-fg:#7DBEF5;
+}
+
+/* ============================================================
+   temel
+   ============================================================ */
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--font-body);
+  font-size:16px;
+  line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:none;padding:0}
+:focus-visible{outline:2.5px solid var(--accent);outline-offset:2px;border-radius:4px}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;transition-duration:.01ms !important}
+}
+
+.app{
+  max-width:540px;
+  margin:0 auto;
+  min-height:100vh;
+  min-height:100dvh;
+  background:var(--bg);
+  padding-bottom:calc(78px + env(safe-area-inset-bottom,0px));
+  position:relative;
+}
+@media (min-width:600px){
+  .app{box-shadow:0 0 0 1px var(--line)}
+}
+
+/* ============================================================
+   üst bar — kareli defter dokusu
+   ============================================================ */
+.topbar{
+  position:sticky; top:0; z-index:40;
+  background:
+    repeating-linear-gradient(to right, var(--bg-grid) 0 1px, transparent 1px 22px),
+    repeating-linear-gradient(to bottom, var(--bg-grid) 0 1px, transparent 1px 22px),
+    var(--bg);
+  border-bottom:1px solid var(--line);
+  padding:calc(11px + env(safe-area-inset-top,0px)) var(--pad) 10px;
+  display:flex; flex-direction:column; gap:9px;
+}
+.topbar-row{display:flex;align-items:center;gap:10px}
+.wordmark{
+  font-family:var(--font-book);
+  font-size:21px; font-weight:600;
+  letter-spacing:-.01em;
+  color:var(--accent);
+  line-height:1.1;
+  flex:1;
+}
+.topbar-date{
+  font-size:11.5px; color:var(--ink-2);
+  letter-spacing:.01em;
+  margin-left:auto; text-align:right;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.icon-btn{
+  width:38px;height:38px;border-radius:11px;flex:none;
+  display:grid;place-items:center;
+  background:var(--surface); border:1px solid var(--line);
+  color:var(--ink-2); box-shadow:var(--shadow-1);
+  transition:transform .12s ease;
+}
+.icon-btn:active{transform:scale(.94)}
+.icon-btn svg{width:19px;height:19px}
+
+.term-pill{
+  display:inline-flex;align-items:center;gap:7px;
+  font-family:var(--font-display);
+  font-size:12.5px;font-weight:600;letter-spacing:.01em;
+  padding:6px 11px;border-radius:99px;
+  background:var(--accent-soft);color:var(--accent-2);
+  transition:transform .12s ease;
+  min-width:0;
+}
+.term-pill:active{transform:scale(.96)}
+.term-pill svg{width:11px;height:11px;flex:none;opacity:.7}
+.term-pill b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.term-pill.is-archive{background:var(--warn-soft);color:var(--warn)}
+
+/* ============================================================
+   görünümler
+   ============================================================ */
+.view{display:none; padding:18px var(--pad) 8px}
+.view.is-active{display:block; animation:fade .22s ease}
+@keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+
+.section{display:flex;flex-direction:column;gap:10px;margin-bottom:26px}
+.section-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.eyebrow{
+  font-family:var(--font-display);
+  font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink-3);
+}
+.section-h{
+  font-family:var(--font-display);
+  font-size:19px;font-weight:600;letter-spacing:-.01em;margin:0;
+  text-wrap:balance;
+}
+.link-btn{font-size:13px;font-weight:600;color:var(--accent);white-space:nowrap}
+
+.card{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--r-md);
+  box-shadow:var(--shadow-1);
+  overflow:hidden;
+}
+
+/* --- depolama uyarısı --- */
+.warnbar{
+  display:flex;flex-direction:column;gap:5px;
+  margin:14px var(--pad) 0;
+  padding:12px 14px;border-radius:var(--r-md);
+  background:var(--alert-soft);color:var(--alert);
+  font-size:12.5px;line-height:1.45;
+}
+.warnbar.tone-warn{background:var(--warn-soft);color:var(--warn)}
+.warnbar b{font-family:var(--font-display);font-weight:600;font-size:13.5px}
+.warnbar .warn-act{
+  align-self:flex-start;margin-top:3px;
+  font-family:var(--font-display);font-size:12.5px;font-weight:600;
+  color:inherit;text-decoration:underline;text-underline-offset:2px;
+}
+
+/* --- arşiv uyarısı --- */
+.banner{
+  display:flex;align-items:center;gap:10px;
+  padding:11px 13px;border-radius:var(--r-md);
+  background:var(--warn-soft);color:var(--warn);
+  font-size:13px;line-height:1.35;margin-bottom:16px;
+}
+.banner b{font-family:var(--font-display);font-weight:600}
+
+/* ============================================================
+   BUGÜN — sıradaki ders afişi
+   ============================================================ */
+.nextup{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--r-lg);
+  box-shadow:var(--shadow-2);
+  padding:16px;
+  display:flex;flex-direction:column;gap:12px;
+  position:relative; overflow:hidden;
+}
+.nextup::before{
+  content:"";position:absolute;inset:0 auto 0 0;width:4px;
+  background:var(--nx,var(--accent));
+}
+.nextup-label{
+  font-family:var(--font-display);
+  font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink-3);
+}
+.nextup-name{
+  font-family:var(--font-display);
+  font-size:24px;font-weight:600;letter-spacing:-.02em;line-height:1.15;
+  margin:0; text-wrap:balance;
+}
+.nextup-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.nextup-when{
+  font-family:var(--font-mono);font-size:13px;font-variant-numeric:tabular-nums;
+  color:var(--ink-2);
+}
+.countdown{
+  font-family:var(--font-display);
+  font-size:13px;font-weight:600;
+  padding:4px 10px;border-radius:99px;
+  background:var(--accent-soft);color:var(--accent-2);
+}
+.countdown.is-live{background:var(--ok-soft);color:var(--ok)}
+.progress{height:5px;border-radius:99px;background:var(--line-soft);overflow:hidden}
+.progress > i{display:block;height:100%;background:var(--ok);border-radius:99px}
+
+/* ============================================================
+   ders satırı
+   ============================================================ */
+.slot{
+  display:flex;gap:12px;align-items:stretch;
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--r-md);
+  box-shadow:var(--shadow-1);
+  padding:12px 13px;
+  text-align:left;width:100%;
+  transition:transform .12s ease;
+}
+.slot:active{transform:scale(.985)}
+.slot.is-done{opacity:.62}
+.slot-time{
+  font-family:var(--font-mono);
+  font-size:12.5px;font-variant-numeric:tabular-nums;
+  color:var(--ink-2);
+  display:flex;flex-direction:column;gap:2px;
+  padding-top:1px; min-width:44px;
+}
+.slot-time b{font-weight:600;color:var(--ink)}
+.slot-bar{width:3px;border-radius:99px;background:var(--sc,var(--accent));flex:none}
+.slot-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.slot-name{
+  font-family:var(--font-display);
+  font-size:15.5px;font-weight:600;letter-spacing:-.01em;line-height:1.25;
+}
+.slot-sub{font-size:12.5px;color:var(--ink-3);display:flex;flex-wrap:wrap;gap:4px 9px}
+.slot-side{display:flex;align-items:center;gap:6px;flex:none}
+
+.att{display:flex;gap:6px;padding:0 13px 12px 13px;margin-top:-4px}
+.att-btn{
+  flex:1;
+  font-family:var(--font-display);
+  font-size:12.5px;font-weight:600;
+  padding:7px 8px;border-radius:9px;
+  border:1px solid var(--line);
+  background:var(--surface-2);color:var(--ink-2);
+  transition:transform .12s ease;
+}
+.att-btn:active{transform:scale(.96)}
+.att-btn.on-yes{background:var(--ok-soft);border-color:transparent;color:var(--ok)}
+.att-btn.on-no{background:var(--alert-soft);border-color:transparent;color:var(--alert)}
+.att-wrap{
+  background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--r-md);box-shadow:var(--shadow-1);overflow:hidden;
+}
+.att-wrap .slot{border:none;box-shadow:none;border-radius:0;background:transparent}
+
+/* ============================================================
+   rozetler
+   ============================================================ */
+.chip{
+  font-family:var(--font-display);
+  font-size:11.5px;font-weight:600;letter-spacing:.01em;
+  padding:3px 8px;border-radius:99px;white-space:nowrap;
+  background:var(--surface-2);color:var(--ink-2);
+}
+.chip.tone-accent{background:var(--accent-soft);color:var(--accent-2)}
+.chip.tone-alert{background:var(--alert-soft);color:var(--alert)}
+.chip.tone-warn{background:var(--warn-soft);color:var(--warn)}
+.chip.tone-ok{background:var(--ok-soft);color:var(--ok)}
+.chip.tone-course{background:var(--cbg);color:var(--cfg)}
+
+/* ============================================================
+   gün seçici
+   ============================================================ */
+.daybar{
+  display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px;
+  scrollbar-width:none;-webkit-overflow-scrolling:touch;
+}
+.daybar::-webkit-scrollbar{display:none}
+.day-pill{
+  font-family:var(--font-display);
+  font-size:13px;font-weight:600;
+  padding:8px 13px;border-radius:11px;flex:none;
+  background:var(--surface);border:1px solid var(--line);color:var(--ink-2);
+  display:flex;flex-direction:column;align-items:center;gap:1px;line-height:1.15;
+  transition:transform .12s ease;
+}
+.day-pill:active{transform:scale(.95)}
+.day-pill small{font-size:9.5px;font-weight:600;letter-spacing:.06em;color:var(--ink-3)}
+.day-pill.is-on{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.day-pill.is-on small{color:var(--bg);opacity:.7}
+.day-pill.is-today:not(.is-on){border-color:var(--accent);color:var(--accent)}
+
+/* ============================================================
+   haftalık ızgara
+   ============================================================ */
+.gridwrap{
+  overflow-x:auto;-webkit-overflow-scrolling:touch;
+  border:1px solid var(--line);border-radius:var(--r-md);
+  background:var(--surface);box-shadow:var(--shadow-1);
+}
+.grid{display:flex;min-width:max-content;position:relative}
+.grid-hours{
+  flex:none;width:44px;position:sticky;left:0;z-index:2;
+  background:var(--surface);border-right:1px solid var(--line);
+}
+.grid-col{flex:none;width:108px;border-right:1px solid var(--line-soft)}
+.grid-col:last-child{border-right:none}
+.grid-head{
+  height:32px;display:grid;place-items:center;
+  font-family:var(--font-display);font-size:11px;font-weight:600;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);
+  border-bottom:1px solid var(--line);
+  position:sticky;top:0;background:var(--surface);z-index:1;
+}
+.grid-head.is-today{color:var(--accent)}
+.grid-body{position:relative}
+.grid-hour{
+  height:56px;border-bottom:1px solid var(--line-soft);
+  font-family:var(--font-mono);font-size:10.5px;color:var(--ink-3);
+  padding:3px 5px 0 0;text-align:right;font-variant-numeric:tabular-nums;
+}
+.grid-line{height:56px;border-bottom:1px solid var(--line-soft)}
+.gblock{
+  position:absolute;left:4px;right:4px;
+  border-radius:9px;padding:5px 6px;overflow:hidden;
+  background:var(--cbg);color:var(--cfg);
+  border-left:3px solid var(--cfg);
+  text-align:left;
+}
+.gblock b{
+  display:block;font-family:var(--font-display);
+  font-size:11.5px;font-weight:600;line-height:1.2;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.gblock span{
+  display:block;font-family:var(--font-mono);font-size:9.5px;opacity:.85;
+  font-variant-numeric:tabular-nums;
+}
+
+/* ============================================================
+   ödev satırı
+   ============================================================ */
+.task{
+  display:flex;gap:12px;align-items:flex-start;
+  background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--r-md);box-shadow:var(--shadow-1);
+  padding:12px 13px;width:100%;text-align:left;
+}
+.task.is-done{opacity:.5}
+.task.is-done .task-name{text-decoration:line-through}
+.tick{
+  width:24px;height:24px;flex:none;border-radius:8px;
+  border:2px solid var(--line);
+  display:grid;place-items:center;color:transparent;
+  transition:transform .12s ease;
+  margin-top:1px;
+}
+.tick:active{transform:scale(.9)}
+.tick svg{width:14px;height:14px}
+.tick.on{background:var(--ok);border-color:var(--ok);color:var(--on-accent)}
+.task-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.task-name{
+  font-family:var(--font-display);
+  font-size:15px;font-weight:600;letter-spacing:-.005em;line-height:1.3;
+}
+.task-meta{display:flex;flex-wrap:wrap;gap:5px 7px;align-items:center}
+
+/* ============================================================
+   devamsızlık ölçeri
+   ============================================================ */
+.meter-row{
+  display:flex;flex-direction:column;gap:7px;
+  padding:13px;border-bottom:1px solid var(--line-soft);
+}
+.meter-row:last-child{border-bottom:none}
+.meter-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.meter-name{
+  font-family:var(--font-display);font-size:14.5px;font-weight:600;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.meter-num{
+  font-family:var(--font-mono);font-size:12.5px;font-variant-numeric:tabular-nums;
+  color:var(--ink-2);flex:none;
+}
+.meter-track{height:7px;border-radius:99px;background:var(--line-soft);overflow:hidden;display:flex}
+.meter-fill{height:100%;border-radius:99px;background:var(--ok);transition:width .3s ease}
+.meter-fill.lvl-warn{background:var(--warn)}
+.meter-fill.lvl-bad{background:var(--alert)}
+
+/* ============================================================
+   ortalama + dönem geçmişi
+   ============================================================ */
+.stat-duo{display:flex}
+.stat{
+  flex:1;padding:16px 14px;
+  display:flex;flex-direction:column;gap:2px;
+  border-right:1px solid var(--line-soft);
+}
+.stat:last-child{border-right:none}
+.stat-num{
+  font-family:var(--font-display);
+  font-size:36px;font-weight:600;letter-spacing:-.035em;line-height:1;
+  font-variant-numeric:tabular-nums;color:var(--accent);
+}
+.stat-num.is-muted{color:var(--ink-3)}
+.stat-cap{
+  font-family:var(--font-display);
+  font-size:10.5px;font-weight:600;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ink-3);margin-top:7px;
+}
+.stat-sub{font-size:12px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+
+.grade-row{
+  display:flex;flex-direction:column;gap:9px;
+  padding:12px 13px;border-bottom:1px solid var(--line-soft);
+}
+.grade-row:last-child{border-bottom:none}
+.grade-head{display:flex;align-items:center;gap:8px;min-width:0}
+.grade-name{
+  flex:1;min-width:0;font-family:var(--font-display);font-size:14.5px;font-weight:600;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;
+}
+.grade-fields{display:flex;align-items:center;gap:10px}
+.field-mini{display:flex;align-items:center;gap:6px}
+.field-mini > span{
+  font-family:var(--font-display);
+  font-size:10px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--ink-3);
+}
+.mini-input{
+  width:54px;padding:6px 5px;border-radius:8px;
+  border:1px solid var(--line);background:var(--surface-2);color:var(--ink);
+  font-family:var(--font-mono);font-size:13px;text-align:center;
+  font-variant-numeric:tabular-nums;
+}
+.mini-input:disabled{opacity:.4}
+.letter-badge{
+  margin-left:auto;flex:none;
+  display:inline-flex;align-items:baseline;gap:5px;
+  padding:4px 10px;border-radius:99px;
+  font-family:var(--font-display);font-size:13px;font-weight:600;
+  background:var(--surface-2);color:var(--ink-3);
+  border:1px dashed var(--line);
+  transition:transform .12s ease;
+}
+.letter-badge:active{transform:scale(.94)}
+.letter-badge.tone-ok,.letter-badge.tone-warn,.letter-badge.tone-alert{border-color:transparent;border-style:solid}
+.letter-badge i{font-family:var(--font-mono);font-size:11px;font-style:normal;opacity:.85}
+.letter-badge.tone-ok{background:var(--ok-soft);color:var(--ok)}
+.letter-badge.tone-warn{background:var(--warn-soft);color:var(--warn)}
+.letter-badge.tone-alert{background:var(--alert-soft);color:var(--alert)}
+
+.stat-foot{
+  display:flex;flex-wrap:wrap;gap:7px;align-items:center;
+  padding:12px 14px;
+  border-top:1px solid var(--line-soft);
+  background:var(--surface-2);
+}
+.stat-foot:empty{display:none}
+.honor{
+  display:inline-flex;align-items:center;gap:6px;
+  font-family:var(--font-display);font-size:12.5px;font-weight:600;
+  padding:5px 11px;border-radius:99px;
+  background:var(--accent-soft);color:var(--accent-2);
+}
+.honor svg{width:13px;height:13px;flex:none}
+
+.status-row{
+  display:flex;flex-direction:column;gap:2px;
+  width:100%;text-align:left;
+  padding:11px 13px;border-bottom:1px solid var(--line-soft);
+}
+.status-row:last-child{border-bottom:none}
+.status-row.is-on{background:var(--accent-soft)}
+.status-row b{font-family:var(--font-display);font-size:14px;font-weight:600}
+.status-row span{font-size:12px;color:var(--ink-3)}
+.status-row.is-on b,.status-row.is-on span{color:var(--accent-2)}
+
+.scale{display:flex;flex-wrap:wrap;gap:5px}
+.scale-cell{
+  display:inline-flex;align-items:baseline;gap:4px;
+  padding:3px 8px;border-radius:7px;background:var(--surface-2);
+  border:1px solid var(--line-soft);
+  font-family:var(--font-mono);font-size:11px;color:var(--ink-2);
+  font-variant-numeric:tabular-nums;
+}
+.scale-cell b{font-family:var(--font-display);font-size:11.5px;font-weight:600;color:var(--ink)}
+
+.term-row{
+  display:flex;align-items:center;gap:9px;
+  padding:11px 13px;border-bottom:1px solid var(--line-soft);
+}
+.term-row:last-child{border-bottom:none}
+.term-row.is-on{background:var(--accent-soft)}
+.term-main{
+  flex:1;min-width:0;display:flex;align-items:baseline;gap:9px;text-align:left;
+}
+.term-name{
+  font-family:var(--font-display);font-size:14.5px;font-weight:600;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.term-gpa{
+  font-family:var(--font-mono);font-size:14px;font-weight:600;
+  font-variant-numeric:tabular-nums;color:var(--accent-2);margin-left:auto;flex:none;
+}
+.term-cr{
+  font-family:var(--font-mono);font-size:11px;color:var(--ink-3);
+  font-variant-numeric:tabular-nums;flex:none;min-width:52px;text-align:right;
+}
+
+/* ============================================================
+   boş durum
+   ============================================================ */
+.empty{
+  border:1px dashed var(--line);border-radius:var(--r-md);
+  padding:26px 20px;text-align:center;
+  display:flex;flex-direction:column;gap:10px;align-items:center;
+  background:var(--surface-2);
+}
+.empty-t{font-family:var(--font-display);font-size:15px;font-weight:600}
+.empty-p{font-size:13.5px;color:var(--ink-2);max-width:34ch;line-height:1.45;text-wrap:balance}
+.empty-flat{border:none;background:transparent;padding:20px}
+
+.btn{
+  font-family:var(--font-display);
+  font-size:14px;font-weight:600;
+  padding:10px 18px;border-radius:11px;
+  background:var(--accent);color:var(--on-accent);
+  transition:transform .12s ease;
+  border:1px solid transparent;
+}
+.btn:active{transform:scale(.96)}
+.btn-ghost{background:var(--surface);color:var(--ink-2);border-color:var(--line)}
+.btn-danger{background:var(--alert-soft);color:var(--alert);border-color:transparent}
+.btn-wide{width:100%;text-align:center}
+
+/* ============================================================
+   alt sekme çubuğu
+   ============================================================ */
+.tabbar{
+  position:fixed;left:0;right:0;bottom:0;z-index:50;
+  display:flex;justify-content:center;
+  background:var(--surface);
+  border-top:1px solid var(--line);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  backdrop-filter:saturate(180%) blur(12px);
+}
+.tabbar-in{display:flex;width:100%;max-width:540px}
+.tab{
+  flex:1;padding:9px 4px 8px;
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  color:var(--ink-3);
+  transition:color .14s ease;
+}
+.tab svg{width:22px;height:22px}
+.tab span{font-family:var(--font-display);font-size:10px;font-weight:600;letter-spacing:.02em}
+.tab.is-on{color:var(--accent)}
+
+/* ============================================================
+   alt sayfa (form)
+   ============================================================ */
+.sheet-veil{
+  position:fixed;inset:0;z-index:60;
+  background:var(--sheet-veil);
+  display:none;animation:veil .2s ease;
+}
+.sheet-veil.is-open{display:block}
+@keyframes veil{from{opacity:0}to{opacity:1}}
+.sheet{
+  position:fixed;left:0;right:0;bottom:0;z-index:61;
+  max-width:540px;margin:0 auto;
+  background:var(--surface);
+  border-radius:22px 22px 0 0;
+  border:1px solid var(--line);border-bottom:none;
+  box-shadow:var(--shadow-2);
+  max-height:92dvh;overflow-y:auto;
+  padding:10px var(--pad) calc(22px + env(safe-area-inset-bottom,0px));
+  transform:translateY(100%);
+  transition:transform .26s cubic-bezier(.32,.72,0,1);
+  -webkit-overflow-scrolling:touch;
+}
+.sheet.is-open{transform:none}
+.grabber{width:38px;height:4px;border-radius:99px;background:var(--line);margin:2px auto 12px}
+.sheet-h{
+  font-family:var(--font-display);
+  font-size:19px;font-weight:600;letter-spacing:-.015em;margin:0 0 14px;
+}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:13px}
+.field-row{display:flex;gap:10px}
+.field-row > .field{flex:1;margin-bottom:13px}
+.label{
+  font-family:var(--font-display);
+  font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-3);
+}
+.input{
+  width:100%;padding:11px 12px;border-radius:11px;
+  border:1px solid var(--line);
+  background:var(--surface-2);color:var(--ink);
+  font-size:16px;
+}
+.input::placeholder{color:var(--ink-3)}
+select.input{-webkit-appearance:none;appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,var(--ink-3) 50%),linear-gradient(135deg,var(--ink-3) 50%,transparent 50%);
+  background-position:calc(100% - 17px) 50%,calc(100% - 12px) 50%;
+  background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:34px;
+}
+textarea.input{min-height:90px;font-family:var(--font-mono);font-size:12px;resize:vertical}
+.swatches{display:flex;gap:9px;flex-wrap:wrap}
+.swatch{width:34px;height:34px;border-radius:10px;border:2px solid transparent;display:grid;place-items:center}
+.swatch i{width:100%;height:100%;border-radius:7px;background:var(--sw);display:block}
+.swatch.is-on{border-color:var(--ink)}
+.sheet-actions{display:flex;gap:10px;margin-top:6px}
+.sheet-actions .btn{flex:1;text-align:center}
+
+.seg{display:flex;gap:6px}
+.seg-btn{
+  flex:1;padding:9px 6px;border-radius:10px;
+  border:1px solid var(--line);background:var(--surface-2);
+  font-family:var(--font-display);font-size:13px;font-weight:600;color:var(--ink-2);
+  text-align:center;
+}
+.seg-btn.is-on{background:var(--accent-soft);border-color:transparent;color:var(--accent-2)}
+
+.note{
+  font-size:12.5px;color:var(--ink-3);line-height:1.5;
+  padding:11px 13px;border-radius:var(--r-sm);
+  background:var(--surface-2);border:1px solid var(--line-soft);
+}
+.note b{font-family:var(--font-display);font-weight:600;color:var(--ink)}
+
+.diag-box{
+  border:1px solid var(--line-soft);border-radius:var(--r-sm);
+  background:var(--surface-2);padding:2px 12px;
+}
+.diag{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:9px 0;border-bottom:1px solid var(--line-soft);
+  font-size:13px;color:var(--ink-2);
+}
+.diag:last-child{border-bottom:none}
+
+/* --- PIN tuş takımı --- */
+.pin{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0 2px}
+.pin-title{
+  font-family:var(--font-display);font-size:19px;font-weight:600;
+  letter-spacing:-.015em;text-align:center;
+}
+.pin-sub{
+  font-size:13px;color:var(--ink-3);text-align:center;
+  max-width:30ch;line-height:1.4;text-wrap:balance;
+}
+.pin-dots{display:flex;gap:14px;margin:22px 0 20px}
+.pin-dots i{
+  width:14px;height:14px;border-radius:99px;
+  border:2px solid var(--line);background:transparent;
+  transition:background .15s ease, border-color .15s ease, transform .15s ease;
+}
+.pin-dots i.on{background:var(--accent);border-color:var(--accent);transform:scale(1.1)}
+.pin-dots.is-bad{animation:shake .45s}
+.pin-dots.is-bad i{border-color:var(--alert)}
+.pin-dots.is-bad i.on{background:var(--alert);border-color:var(--alert)}
+@keyframes shake{
+  10%,90%{transform:translateX(-2px)} 20%,80%{transform:translateX(4px)}
+  30%,50%,70%{transform:translateX(-8px)} 40%,60%{transform:translateX(8px)}
+}
+.pin-pad{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:12px;
+  width:100%;max-width:280px;
+}
+.pin-key{
+  height:60px;border-radius:16px;
+  background:var(--surface-2);border:1px solid var(--line);
+  font-family:var(--font-display);font-size:24px;font-weight:600;
+  color:var(--ink);
+  transition:transform .1s ease, background .1s ease;
+}
+.pin-key:active{transform:scale(.94);background:var(--accent-soft)}
+.pin-key.is-flat{background:transparent;border-color:transparent;font-size:19px;color:var(--ink-2)}
+.pin-key.is-flat:active{background:var(--surface-2)}
+.pin-cancel{
+  margin-top:16px;font-family:var(--font-display);
+  font-size:14px;font-weight:600;color:var(--ink-3);padding:8px 16px;
+}
+
+/* --- otomatik yedek listesi --- */
+.snap-row{
+  display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+  padding:11px 13px;border-bottom:1px solid var(--line-soft);
+}
+.snap-row:last-child{border-bottom:none}
+.snap-when{
+  flex:1;min-width:0;font-family:var(--font-display);font-size:13.5px;font-weight:600;
+}
+.snap-size{
+  font-family:var(--font-mono);font-size:11px;color:var(--ink-3);
+  font-variant-numeric:tabular-nums;
+}
+
+/* --- tehlikeli bölge --- */
+.danger{
+  border:1px solid var(--alert);border-radius:var(--r-md);
+  padding:14px;display:flex;flex-direction:column;gap:9px;
+}
+.danger b{font-family:var(--font-display);font-size:14px;font-weight:600;color:var(--alert)}
+.danger p{margin:0;font-size:12.5px;color:var(--ink-2);line-height:1.45}
+.btn[disabled]{opacity:.4;pointer-events:none}
+.divider{height:1px;background:var(--line);margin:18px 0}
+
+.toast{
+  position:fixed;bottom:calc(88px + env(safe-area-inset-bottom,0px));
+  left:50%;transform:translateX(-50%) translateY(14px);
+  z-index:70;opacity:0;pointer-events:none;
+  background:var(--ink);color:var(--bg);
+  font-family:var(--font-display);font-size:13px;font-weight:600;
+  padding:9px 16px;border-radius:99px;box-shadow:var(--shadow-2);
+  transition:opacity .2s ease, transform .2s ease;
+  white-space:nowrap;max-width:90vw;
+}
+.toast.is-on{opacity:1;transform:translateX(-50%)}
+</style>
+
+<div class="app">
+
+  <header class="topbar">
+    <div class="topbar-row">
+      <div class="wordmark">Ders Defteri</div>
+      <button class="icon-btn" id="btn-settings" aria-label="Ayarlar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.88 1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.88l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.88V9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1z"/>
+        </svg>
+      </button>
+    </div>
+    <div class="topbar-row">
+      <button class="term-pill" id="btn-term" aria-label="Dönem seç">
+        <b id="term-label">—</b>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9l7 7 7-7"/></svg>
+      </button>
+      <span class="topbar-date" id="today-line"></span>
+    </div>
+  </header>
+
+  <div id="storage-warn"></div>
+
+  <!-- ===================== BUGÜN ===================== -->
+  <main class="view is-active" id="view-bugun">
+    <div id="archive-banner"></div>
+    <div id="nextup-slot"></div>
+
+    <section class="section" style="margin-top:22px">
+      <div class="section-head">
+        <h2 class="section-h" id="today-title">Bugünün dersleri</h2>
+        <span class="eyebrow" id="today-count"></span>
+      </div>
+      <div id="today-list"></div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2 class="section-h">Yaklaşanlar</h2>
+        <button class="link-btn" data-goto="odevler">Tümü</button>
+      </div>
+      <div id="soon-list"></div>
+    </section>
+  </main>
+
+  <!-- ===================== PROGRAM ===================== -->
+  <main class="view" id="view-program">
+    <div class="seg" style="margin-bottom:14px">
+      <button class="seg-btn is-on" id="mode-gun">Gün</button>
+      <button class="seg-btn" id="mode-hafta">Hafta</button>
+    </div>
+
+    <div id="pane-gun">
+      <div class="daybar" id="daybar"></div>
+      <div id="day-list"></div>
+    </div>
+
+    <div id="pane-hafta" style="display:none">
+      <div id="week-grid"></div>
+    </div>
+
+    <div class="divider"></div>
+    <button class="btn btn-wide" id="btn-add-ders">Ders ekle</button>
+    <div class="note" style="margin-top:12px">
+      Bir dersin haftada birden çok saati varsa aynı dersi seçip yeni bir saat ekleyin — devamsızlık ve ortalama tek başlık altında toplanır.
+    </div>
+  </main>
+
+  <!-- ===================== ÖDEVLER ===================== -->
+  <main class="view" id="view-odevler">
+    <div class="seg" style="margin-bottom:16px">
+      <button class="seg-btn is-on" data-filter="acik">Açık</button>
+      <button class="seg-btn" data-filter="hepsi">Hepsi</button>
+      <button class="seg-btn" data-filter="biten">Biten</button>
+    </div>
+    <div id="task-list"></div>
+    <div class="divider"></div>
+    <button class="btn btn-wide" id="btn-add-odev">Ödev veya sınav ekle</button>
+  </main>
+
+  <!-- ===================== DURUM ===================== -->
+  <main class="view" id="view-durum">
+    <section class="section">
+      <div class="card">
+        <div class="stat-duo">
+          <div class="stat">
+            <div class="stat-num" id="dno">—</div>
+            <div class="stat-cap">Dönem · DNO</div>
+            <div class="stat-sub" id="dno-sub">—</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num" id="agno">—</div>
+            <div class="stat-cap">Genel · AGNO</div>
+            <div class="stat-sub" id="agno-sub">—</div>
+          </div>
+        </div>
+        <div class="stat-foot" id="stat-foot"></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <span class="eyebrow" id="grade-eyebrow">Bu dönemin notları</span>
+      </div>
+      <div class="card" id="grade-list"></div>
+      <div class="note" id="scale-note"></div>
+      <button class="btn btn-ghost btn-wide" id="btn-add-grade">Programsız ders ekle</button>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <span class="eyebrow">Dönemler</span>
+        <button class="link-btn" id="btn-new-term">Yeni dönem</button>
+      </div>
+      <div class="card" id="term-list"></div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <span class="eyebrow">Devamsızlık</span>
+        <button class="link-btn" id="btn-abs-settings">Sınırı ayarla</button>
+      </div>
+      <div class="card" id="absence-list"></div>
+      <div class="note" id="absence-note"></div>
+    </section>
+  </main>
+
+  <nav class="tabbar">
+    <div class="tabbar-in">
+      <button class="tab is-on" data-tab="bugun">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.8v3.4M16 2.8v3.4"/><circle cx="12" cy="14.5" r="1.6" fill="currentColor" stroke="none"/>
+        </svg>
+        <span>Bugün</span>
+      </button>
+      <button class="tab" data-tab="program">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="17" rx="2.5"/><path d="M3 9h18M9 9v12M15 9v12"/>
+        </svg>
+        <span>Program</span>
+      </button>
+      <button class="tab" data-tab="odevler">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 4h6a1.5 1.5 0 0 1 1.5 1.5V6h1A2.5 2.5 0 0 1 20 8.5v10A2.5 2.5 0 0 1 17.5 21h-11A2.5 2.5 0 0 1 4 18.5v-10A2.5 2.5 0 0 1 6.5 6h1v-.5A1.5 1.5 0 0 1 9 4z"/><path d="M8.5 13.5l2 2 4.5-4.5"/>
+        </svg>
+        <span>Ödevler</span>
+      </button>
+      <button class="tab" data-tab="durum">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>
+        </svg>
+        <span>Durum</span>
+      </button>
+    </div>
+  </nav>
+</div>
+
+<div class="sheet-veil" id="veil"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true">
+  <div class="grabber"></div>
+  <div id="sheet-body"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+/* iPhone'da doğru ölçekleme için viewport güvencesi */
+(function(){
+  if(!document.querySelector('meta[name="viewport"]')){
+    var m=document.createElement('meta');
+    m.name='viewport';
+    m.content='width=device-width, initial-scale=1, viewport-fit=cover';
+    document.head.appendChild(m);
+  }
+})();
+
+/* ============================================================
+   sabitler
+   ============================================================ */
+const DAYS   = ['Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi','Pazar'];
+const DAYS_S = ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'];
+const COLORS = ['Mürekkep','Nane','Erik','Kiremit','Bal','Deniz'];
+const TYPES  = {odev:'Ödev', sinav:'Sınav', proje:'Proje', sunum:'Sunum'};
+const SEASONS= [['guz','Güz'],['bahar','Bahar'],['yaz','Yaz Okulu']];
+const SEASON_ORDER = {guz:0, bahar:1, yaz:2};
+/* yüzdelik → harf → katsayı (Atılım Üniversitesi tablosu)
+   [alt sınır, harf, katsayı] — büyükten küçüğe sıralı */
+const SCALE = [
+  [90,'AA',4.00],[85,'BA',3.50],[80,'BB',3.00],[75,'CB',2.50],[70,'CC',2.00],
+  [65,'DC',1.50],[60,'DD',1.00],[50,'FD',0.50],[0,'FF',0.00]
+];
+/* eski sürümden gelen harf kayıtlarını puana çevirmek için */
+const LETTER_TO_SCORE = {AA:95, BA:87, BB:82, CB:77, CC:72, DC:67, DD:62, FD:55, FF:30};
+
+/* sayısal notu olmayan özel harfler — [harf, ad, ortalamaya etkisi] */
+const SPECIALS = [
+  ['I' ,'Eksik',                'Ortalamaya katılmaz'],
+  ['S' ,'Başarılı',             'Ortalamaya katılmaz'],
+  ['U' ,'Başarısız',            'Ortalamaya katılmaz'],
+  ['W' ,'Çekilmiş',             'Ortalamaya katılmaz'],
+  ['NI','Program dışı',         'Ortalamaya katılmaz'],
+  ['NA','Devamsızlıktan kaldı', 'FF gibi 0.00 sayılır']
+];
+const SPECIAL_ZERO = ['NA'];   // ortalamaya 0.00 katsayıyla girenler
+
+/* yönetmelik eşikleri */
+const PASS_GPA  = 2.00;   // altında başarısız sayılır
+const RETRY_GPA = 1.70;   // altında ders tekrarı gündeme gelir
+const HONOR     = 3.00;   // yarıyıl onur öğrencisi
+const HIGH_HONOR= 3.50;   // yarıyıl yüksek onur öğrencisi
+const KEY  = 'ders-defteri-v2';
+const KEY1 = 'ders-defteri-v1';
+
+/* ============================================================
+   durum
+   ============================================================ */
+const uid = ()=> Math.random().toString(36).slice(2,10);
+
+/* bugüne göre içinde bulunulan akademik dönem */
+function currentTermSpec(){
+  const n=new Date(), y=n.getFullYear(), m=n.getMonth();
+  if(m>=7)  return {year:y+'-'+(y+1),     season:'guz'};    // Ağustos–Aralık
+  if(m===0) return {year:(y-1)+'-'+y,     season:'guz'};    // Ocak (güz finalleri)
+  if(m<=5)  return {year:(y-1)+'-'+y,     season:'bahar'};  // Şubat–Haziran
+  return      {year:(y-1)+'-'+y,          season:'yaz'};    // Temmuz
+}
+function makeTerm(spec){
+  const s = spec || currentTermSpec();
+  return {id:uid(), year:s.year, season:s.season, weeks:14, rate:30};
+}
+function blank(){
+  const t = makeTerm();
+  return {terms:[t], activeTerm:t.id, courses:[], sessions:[], tasks:[], marks:{},
+          settings:{theme:'auto'}, savedAt:0};
+}
+function normalize(d){
+  const b = blank();
+  const out = {
+    terms:    Array.isArray(d.terms) && d.terms.length ? d.terms : b.terms,
+    activeTerm: d.activeTerm,
+    courses:  Array.isArray(d.courses)? d.courses : [],
+    sessions: Array.isArray(d.sessions)? d.sessions : [],
+    tasks:    Array.isArray(d.tasks)? d.tasks : [],
+    marks:    (d.marks && typeof d.marks==='object')? d.marks : {},
+    settings: Object.assign({theme:'auto'}, d.settings||{}),
+    savedAt:  Number(d.savedAt)||0
+  };
+  if(!out.terms.some(t=>t.id===out.activeTerm)) out.activeTerm = out.terms[0].id;
+  const first = out.terms[0].id;
+  out.courses.forEach(c=>{
+    if(!c.termId) c.termId=first;
+    /* harf notundan puana geçiş */
+    if((c.score==null || c.score==='') && c.letter && LETTER_TO_SCORE[c.letter]!=null){
+      c.score = LETTER_TO_SCORE[c.letter];
+    }
+    delete c.letter;
+  });
+  out.tasks.forEach(t=>{ if(!t.termId) t.termId=first; });
+  return out;
+}
+/* v1 → v2: tüm veri tek bir döneme taşınır */
+function migrateV1(d){
+  const t = makeTerm();
+  if(d.settings){ t.weeks=+d.settings.weeks||14; t.rate=+d.settings.rate||30; }
+  return normalize({
+    terms:[t], activeTerm:t.id,
+    courses:(d.courses||[]).map(c=>Object.assign({},c,{termId:t.id})),
+    sessions:d.sessions||[],
+    tasks:(d.tasks||[]).map(x=>Object.assign({},x,{termId:t.id})),
+    marks:d.marks||{},
+    settings:{theme:(d.settings&&d.settings.theme)||'auto'}
+  });
+}
+/* ============================================================
+   depolama — iki ayrı yere birden yazılır
+   1) localStorage : anında, senkron
+   2) IndexedDB    : tarayıcılar bunu daha geç siler
+   Okurken hangisinde daha yeni kayıt varsa o alınır.
+   ============================================================ */
+const DB_NAME='ders-defteri', DB_STORE='kv', DB_KEY='state';
+let idb = null;
+let lsHadData = false;
+
+const health = {
+  ls:null,        // localStorage yazılabiliyor mu
+  db:null,        // IndexedDB açılabildi mi
+  framed:false,   // sayfa bir çerçeve içinde mi
+  lost:false,     // daha önce veri vardı ama bulunamadı
+  corrupt:false,  // kayıt okunamadı, anlık yedeğe dönüldü
+  persisted:null, // tarayıcı kalıcı depolama sözü verdi mi
+  savedAt:0
+};
+
+/* sayfa başka bir sitenin çerçevesi içinde mi açılmış? */
+try{ health.framed = (window.top !== window.self); }
+catch(e){ health.framed = true; }
+
+/* sayfa nasıl açıldı?
+   web    : http(s) adresinden — depo kalıcı olabilir
+   isFile : dosya / önizleme olarak (iPhone'da Hızlı Bakış) — depo her açılışta sıfırlanır
+   standalone : ana ekrana kurulmuş uygulama olarak — en güvenli hâl */
+const ENV = (function(){
+  const proto = String(location.protocol||'');
+  const ua = navigator.userAgent||'';
+  const web = /^https?:$/.test(proto);
+  const isIOS = /iPhone|iPad|iPod/.test(ua) ||
+                (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+  let standalone = false;
+  try{
+    standalone = navigator.standalone===true ||
+                 (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+  }catch(e){}
+  return {web, isFile:!web, isIOS, standalone};
+})();
+
+/* localStorage gerçekten yazıp okuyabiliyor mu — sadece varlığına bakmak yetmez */
+function lsWorks(){
+  try{
+    localStorage.setItem('__dd_test__','1');
+    const ok = localStorage.getItem('__dd_test__')==='1';
+    localStorage.removeItem('__dd_test__');
+    return ok;
+  }catch(e){ return false; }
+}
+
+/* --- IndexedDB sarmalayıcıları: hata hâlinde sessizce null/false döner --- */
+function idbOpen(){
+  return new Promise(res=>{
+    let done=false;
+    const finish=v=>{ if(!done){ done=true; res(v); } };
+    setTimeout(()=>finish(null), 4000);          // takılırsa açılışı bekletme
+    try{
+      if(!window.indexedDB) return finish(null);
+      const rq = indexedDB.open(DB_NAME, 1);
+      rq.onupgradeneeded = ()=>{
+        const db = rq.result;
+        if(!db.objectStoreNames.contains(DB_STORE)) db.createObjectStore(DB_STORE);
+      };
+      rq.onsuccess = ()=>{
+        if(done && !idb){
+          /* süre dolduktan sonra açıldı: yine de kullan, eldeki hâli hemen yaz */
+          idb = rq.result; health.db = true;
+          if(!isEmpty()) idbSet(JSON.stringify(S));
+          return;
+        }
+        finish(rq.result);
+      };
+      rq.onerror   = ()=> finish(null);
+      rq.onblocked = ()=> finish(null);
+    }catch(e){ finish(null); }
+  });
+}
+function idbGet(){
+  return new Promise(res=>{
+    if(!idb) return res(null);
+    try{
+      const rq = idb.transaction(DB_STORE,'readonly').objectStore(DB_STORE).get(DB_KEY);
+      rq.onsuccess = ()=> res(rq.result||null);
+      rq.onerror   = ()=> res(null);
+    }catch(e){ res(null); }
+  });
+}
+function idbSet(v){
+  return new Promise(res=>{
+    if(!idb) return res(false);
+    try{
+      const tx = idb.transaction(DB_STORE,'readwrite');
+      tx.objectStore(DB_STORE).put(v, DB_KEY);
+      tx.oncomplete = ()=> res(true);
+      tx.onerror    = ()=> res(false);
+      tx.onabort    = ()=> res(false);
+    }catch(e){ res(false); }
+  });
+}
+
+/* "daha önce veri girilmişti" işareti — depolamadan bağımsız dursun diye çerez */
+function seenFlag(){ try{ return document.cookie.indexOf('dd_seen=1')>=0; }catch(e){ return false; } }
+function setSeenFlag(){
+  try{ document.cookie = 'dd_seen=1; max-age=31536000; path=/; SameSite=Lax'; }catch(e){}
+}
+
+/* ============================================================
+   otomatik anlık yedekler
+   Asıl günlük risk tarayıcının silmesi değil, yanlışlıkla silmek.
+   Son 12 hâl saklanır; silme gibi geri dönülmez işlemlerden hemen
+   önce zorunlu bir kopya alınır.
+   ============================================================ */
+const SNAP_KEY = 'ders-defteri-snapshots';
+const SNAP_MAX = 12;
+const SNAP_GAP = 20*60*1000;        // rutin kopyalar arası en az süre
+
+function snapList(){
+  try{
+    const a = JSON.parse(localStorage.getItem(SNAP_KEY)||'[]');
+    return Array.isArray(a) ? a.filter(x=>x && x.at && x.json) : [];
+  }catch(e){ return []; }
+}
+function snapWrite(list){
+  try{ localStorage.setItem(SNAP_KEY, JSON.stringify(list.slice(-SNAP_MAX))); }
+  catch(e){
+    /* yer kalmadıysa en eskileri at, tekrar dene */
+    try{ localStorage.setItem(SNAP_KEY, JSON.stringify(list.slice(-4))); }catch(e2){}
+  }
+}
+function snapPush(force, json){
+  if(isEmpty()) return;
+  const list = snapList();
+  const last = list[list.length-1];
+  const now  = Date.now();
+  if(!force && last && (now-last.at) < SNAP_GAP) return;
+  const data = json || JSON.stringify(S);
+  if(last && last.json===data) return;         // değişmemişse yazma
+  list.push({at:now, json:data});
+  snapWrite(list);
+}
+function snapRestore(at){
+  const item = snapList().find(x=>x.at===at);
+  if(!item) return false;
+  try{
+    const parsed = normalize(JSON.parse(item.json));
+    snapPush(true);                            // mevcut hâli sakla, geri dönülebilsin
+    S = parsed;
+    save();
+    snapPush(true);                            // dönülen hâli de en yeni kopya yap:
+    applyTheme(); renderAll();                 // kayıt bozulursa kurtarma buna denk gelsin
+    return true;
+  }catch(e){ return false; }
+}
+
+function load(){
+  try{
+    const raw = localStorage.getItem(KEY);
+    if(raw){ lsHadData = true; return normalize(JSON.parse(raw)); }
+    const old = localStorage.getItem(KEY1);
+    if(old){ lsHadData = true; return migrateV1(JSON.parse(old)); }
+    return blank();
+  }catch(e){
+    /* kayıt bozulmuşsa boş defterle başlama — en son sağlam kopyaya dön */
+    health.corrupt = true;
+    const list = snapList();
+    for(let i=list.length-1; i>=0; i--){
+      try{
+        const d = normalize(JSON.parse(list[i].json));
+        lsHadData = true;
+        return d;
+      }catch(e2){}
+    }
+    return blank();
+  }
+}
+
+function isEmpty(){
+  return !S.courses.length && !S.sessions.length && !S.tasks.length;
+}
+
+function save(){
+  S.savedAt = Date.now();
+  health.savedAt = S.savedAt;
+  const json = JSON.stringify(S);
+
+  let okLS = false;
+  try{ localStorage.setItem(KEY, json); okLS = true; }catch(e){}
+  health.ls = okLS;
+
+  if(!isEmpty()) setSeenFlag();
+  snapPush(false, json);
+
+  idbSet(json).then(okDB=>{
+    if(idb) health.db = okDB;
+    if(!okLS && !okDB){
+      toast('Kaydedilemedi — veriler kalıcı değil');
+      renderStorageWarn();
+    } else if(health.lost){
+      health.lost = false;
+      renderStorageWarn();
+    }
+  });
+
+  if(!okLS && !idb) renderStorageWarn();
+}
+
+/* tarayıcıdan veriyi silmeme sözü iste */
+function askPersist(){
+  try{
+    if(navigator.storage && navigator.storage.persist){
+      navigator.storage.persisted().then(already=>{
+        if(already){ health.persisted = true; return; }
+        navigator.storage.persist().then(ok=>{ health.persisted = !!ok; });
+      }).catch(()=>{});
+    }
+  }catch(e){}
+}
+
+/* açılıştan sonra IndexedDB'yi devreye al; oradaki kayıt daha yeniyse onu kullan */
+function hydrate(){
+  return idbOpen().then(db=>{
+    idb = db;
+    health.db = !!db;
+    return idbGet();
+  }).then(raw=>{
+    if(raw){
+      try{
+        const d = JSON.parse(raw);
+        const dbNewer  = (d.savedAt||0) > (S.savedAt||0);
+        const dbHasData = !!((d.courses||[]).length || (d.sessions||[]).length || (d.tasks||[]).length);
+        /* ana depo açılışta boştu ama yedekte kayıt var: tarayıcı ana depoyu silmiş demektir */
+        if(!S.savedAt || dbNewer || (!lsHadData && dbHasData)){
+          S = normalize(d);
+          applyTheme(); renderAll();
+          if(!lsHadData && !isEmpty()) toast('Kayıtların yedek depodan geri yüklendi');
+        }
+      }catch(e){}
+    } else if(idb && !isEmpty()){
+      idbSet(JSON.stringify(S));               // ilk kez: IndexedDB'ye kopyala
+    }
+    health.lost = seenFlag() && isEmpty();
+    renderStorageWarn();
+  }).catch(()=>{
+    health.db = false;
+    renderStorageWarn();
+  });
+}
+
+let S  = load();
+let ui = { tab:'bugun', day:0, mode:'gun', filter:'acik' };
+health.savedAt = S.savedAt || 0;
+
+/* ============================================================
+   yardımcılar
+   ============================================================ */
+const $  = (s,r)=> (r||document).querySelector(s);
+const $$ = (s,r)=> Array.from((r||document).querySelectorAll(s));
+function esc(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, c=>({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+function todayIdx(){ return (new Date().getDay()+6)%7; }
+function toMin(t){ if(!t) return 0; const p=String(t).split(':'); return (+p[0])*60+(+(p[1]||0)); }
+function isoOf(d){
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function isoToday(){ return isoOf(new Date()); }
+function parseISO(s){ const p=String(s||'').split('-').map(Number); return new Date(p[0],(p[1]||1)-1,p[2]||1); }
+function daysLeft(iso){
+  const a=new Date(); a.setHours(0,0,0,0);
+  return Math.round((parseISO(iso)-a)/86400000);
+}
+function fmtDate(iso){
+  return parseISO(iso).toLocaleDateString('tr-TR',{day:'numeric',month:'long'});
+}
+function toast(msg){
+  const t=$('#toast'); t.textContent=msg; t.classList.add('is-on');
+  clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('is-on'), 1900);
+}
+
+/* --- dönem --- */
+function term(id){ return S.terms.find(t=>t.id===id); }
+function activeTerm(){ return term(S.activeTerm) || S.terms[0]; }
+function termLabel(t){
+  if(!t) return '';
+  const s = SEASONS.find(x=>x[0]===t.season);
+  return t.year+' '+(s?s[1]:'');
+}
+function termsSorted(){
+  return S.terms.slice().sort((a,b)=>{
+    if(a.year!==b.year) return b.year.localeCompare(a.year);
+    return (SEASON_ORDER[b.season]||0)-(SEASON_ORDER[a.season]||0);
+  });
+}
+function isArchive(t){
+  const c = currentTermSpec();
+  return !t || t.year!==c.year || t.season!==c.season;
+}
+
+/* --- ders --- */
+function course(id){ return S.courses.find(c=>c.id===id); }
+function termCourses(tid){
+  const id = tid || S.activeTerm;
+  return S.courses.filter(c=>c.termId===id);
+}
+function cvar(c){
+  const i = (c && typeof c.color==='number') ? c.color%6 : 0;
+  return '--cbg:var(--c'+i+'-bg);--cfg:var(--c'+i+'-fg)';
+}
+function sessionsOf(day){
+  const ids = termCourses().map(c=>c.id);
+  return S.sessions
+    .filter(s=>s.day===day && ids.indexOf(s.courseId)>=0)
+    .sort((a,b)=>toMin(a.start)-toMin(b.start));
+}
+/* ders saati: 60 dakikaya yuvarlanır */
+function hoursOf(sess){
+  return Math.max(1, Math.round((toMin(sess.end)-toMin(sess.start))/60));
+}
+function weeklyHours(courseId){
+  return S.sessions.filter(s=>s.courseId===courseId).reduce((n,s)=>n+hoursOf(s),0);
+}
+function absenceHours(courseId){
+  let n=0;
+  for(const k in S.marks){
+    if(S.marks[k]!=='yok') continue;
+    const s = S.sessions.find(x=>x.id===k.split('__')[0]);
+    if(s && s.courseId===courseId) n += hoursOf(s);
+  }
+  return n;
+}
+function absenceLimit(courseId){
+  const c = course(courseId);
+  const t = (c && term(c.termId)) || activeTerm();
+  return Math.floor(weeklyHours(courseId) * (t.weeks||14) * (t.rate||30) / 100);
+}
+
+/* --- not / ortalama ---
+   gradeOf → {letter, coef} döner. coef null ise ders ortalamaya katılmaz. */
+function gradeOf(c){
+  if(!c) return null;
+  if(c.status){
+    const sp = SPECIALS.find(s=>s[0]===c.status);
+    if(!sp) return null;
+    const zero = SPECIAL_ZERO.indexOf(c.status)>=0;
+    return {special:true, letter:sp[0], label:sp[1], coef: zero?0:null};
+  }
+  if(c.score===''||c.score==null) return null;
+  const n = Number(c.score);
+  if(!isFinite(n)) return null;
+  const v = Math.max(0, Math.min(100, n));
+  const row = SCALE.find(r=> v>=r[0]);
+  return {score:v, letter:row[1], coef:row[2]};
+}
+function gradeTone(g){
+  if(!g || g.coef==null) return '';   // ortalamaya girmiyor → nötr
+  if(g.coef>=2) return 'tone-ok';     // geçti
+  if(g.coef>=1) return 'tone-warn';   // koşullu
+  return 'tone-alert';                // kaldı
+}
+function gradeText(g){
+  if(!g) return '—';
+  return esc(g.letter)+(g.coef!=null ? ' <i>'+g.coef.toFixed(2)+'</i>' : '');
+}
+function gpaOf(courses){
+  let pts=0, cr=0, n=0;
+  courses.forEach(c=>{
+    const g = gradeOf(c);
+    const credit = Number(c.credit)||0;
+    if(g && g.coef!=null && credit>0){ pts+=g.coef*credit; cr+=credit; n++; }
+  });
+  return {gpa: cr? pts/cr : null, credits:cr, count:n};
+}
+
+/* ============================================================
+   tema
+   ============================================================ */
+function applyTheme(){
+  const t = S.settings.theme;
+  if(t==='auto') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme', t);
+}
+
+/* ============================================================
+   depolama uyarısı
+   ============================================================ */
+function renderStorageWarn(){
+  const el = $('#storage-warn');
+  if(!el) return;
+
+  /* 0) dosya olarak açılmış — iPhone'da Hızlı Bakış her açılışta sıfırdan başlar */
+  if(ENV.isFile){
+    el.innerHTML = '<div class="warnbar"><b>Bu şekilde açıldığında kayıtlar tutulmaz</b>'+
+      '<span>Sayfa bir web adresinden değil, dosya olarak açılmış. '+
+      (ENV.isIOS
+        ? 'iPhone dosya önizlemesini her seferinde sıfırdan başlatır; girdiklerin kapatınca silinir. '
+        : 'Tarayıcılar dosyadan açılan sayfalara kalıcı depo vermez. ')+
+      'Uygulamayı bir web adresine koyup Safari\'de aç, sonra Paylaş → Ana Ekrana Ekle ile kur. '+
+      'O zamana kadar girdiklerini Ayarlar → Elle yedek\'ten kopyalamadan kapatma.</span></div>';
+    return;
+  }
+
+  /* 1) hiçbir yere yazılamıyor — en ağır durum */
+  if(health.ls===false && health.db===false){
+    el.innerHTML = '<div class="warnbar"><b>Girdiklerin kaydedilmiyor</b>'+
+      '<span>'+(health.framed
+        ? 'Bu sayfa başka bir sitenin çerçevesi içinde açıldığı için tarayıcı veri saklamaya izin vermiyor. '+
+          'Uygulamayı kendi adresinde açman gerekiyor.'
+        : 'Tarayıcı bu sayfaya depolama izni vermiyor. Gizli sekmede açtıysan normal sekmede dene.')+
+      '</span></div>';
+    return;
+  }
+
+  /* 2) daha önce veri girilmişti ama bulunamadı */
+  if(health.lost){
+    el.innerHTML = '<div class="warnbar"><b>Önceki kayıtların bulunamadı</b>'+
+      '<span>Tarayıcı bu sayfanın verilerini silmiş olabilir. Elinde yedek varsa geri yükleyebilirsin.</span>'+
+      '<button class="warn-act" id="warn-restore">Ayarlar → Yedek\'i aç</button></div>';
+    const b = $('#warn-restore');
+    if(b) b.onclick = ()=>{ health.lost=false; renderStorageWarn(); openSettings(); };
+    return;
+  }
+
+  /* 3) kayıt bozulmuştu, otomatik yedekten dönüldü */
+  if(health.corrupt){
+    el.innerHTML = '<div class="warnbar tone-warn"><b>Kayıt okunamadı, yedekten dönüldü</b>'+
+      '<span>Ana kayıt bozulmuştu; son otomatik kopyayla açıldı. Son birkaç dakikada girdiklerin eksik olabilir, '+
+      'bir kontrol et.</span>'+
+      '<button class="warn-act" id="warn-ok">Anladım</button></div>';
+    const b = $('#warn-ok');
+    if(b) b.onclick = ()=>{ health.corrupt=false; renderStorageWarn(); };
+    return;
+  }
+
+  /* 4) çerçeve içinde ama şimdilik yazabiliyor — sessiz kayıp riski */
+  if(health.framed && health.ls!==false){
+    el.innerHTML = '<div class="warnbar tone-warn"><b>Bu adres verilerini garanti etmiyor</b>'+
+      '<span>Sayfa bir çerçeve içinde çalışıyor; tarayıcı sekmeyi kapattığında kayıtları silebilir. '+
+      'Uygulamayı kendi adresinde açarsan bu risk kalkar. O zamana kadar Ayarlar → Yedek\'ten kopya al.</span></div>';
+    return;
+  }
+
+  /* 5) web adresinde ama tarayıcı sekmesinde — ana ekrana kurulursa daha güvenli */
+  if(ENV.web && !ENV.standalone && !S.settings.installHintOff && !isEmpty()){
+    el.innerHTML = '<div class="warnbar tone-warn"><b>Ana ekrana kur, kayıtların güvende olsun</b>'+
+      '<span>'+(ENV.isIOS
+        ? 'Safari, 7 gün girilmeyen sitelerin verisini silebilir. Ana ekrana kurulan uygulama bu kuraldan muaf tutulur ve çevrimdışı da açılır. Paylaş düğmesi → Ana Ekrana Ekle.'
+        : 'Ana ekrana kurulan uygulama çevrimdışı da açılır ve tarayıcı verisini daha geç siler. Tarayıcı menüsü → Ana ekrana ekle.')+
+      '</span><button class="warn-act" id="warn-inst-ok">Tamam, bir daha gösterme</button></div>';
+    const b = $('#warn-inst-ok');
+    if(b) b.onclick = ()=>{ S.settings.installHintOff = true; save(); renderStorageWarn(); };
+    return;
+  }
+
+  el.innerHTML = '';
+}
+
+/* ============================================================
+   üst bar
+   ============================================================ */
+function renderTop(){
+  const t = activeTerm();
+  $('#term-label').textContent = termLabel(t);
+  $('#btn-term').classList.toggle('is-archive', isArchive(t));
+  $('#today-line').textContent =
+    new Date().toLocaleDateString('tr-TR',{day:'numeric',month:'long',weekday:'long'});
+}
+
+/* ============================================================
+   BUGÜN
+   ============================================================ */
+function renderToday(){
+  const now = new Date();
+  const nowMin = now.getHours()*60+now.getMinutes();
+  const di = todayIdx();
+  const list = sessionsOf(di);
+  const t = activeTerm();
+
+  $('#today-title').textContent = DAYS[di] + ' dersleri';
+  $('#today-count').textContent = list.length ? list.length+' ders' : '';
+
+  $('#archive-banner').innerHTML = isArchive(t)
+    ? '<div class="banner"><span>Arşiv dönemindesin: <b>'+esc(termLabel(t))+'</b>. '+
+      'Bugünün dersleri ve yoklama bu döneme göre gösteriliyor.</span></div>'
+    : '';
+
+  /* --- sıradaki / şu anki ders --- */
+  const nx = $('#nextup-slot');
+  const live = list.find(s=> nowMin>=toMin(s.start) && nowMin<toMin(s.end));
+  const next = list.find(s=> toMin(s.start)>nowMin);
+  const pick = live || next;
+  const anySession = termCourses().some(c=> S.sessions.some(s=>s.courseId===c.id));
+
+  if(!anySession){
+    nx.innerHTML =
+      '<div class="empty">'+
+        '<div class="empty-t">'+esc(termLabel(t))+' henüz boş</div>'+
+        '<div class="empty-p">Bu dönemin haftalık programını bir kez gir, gerisi kendiliğinden işlesin: '+
+        'günün dersleri, devamsızlık ve ortalama buradan hesaplanır.</div>'+
+        '<button class="btn" id="empty-add">İlk dersi ekle</button>'+
+      '</div>';
+    const b=$('#empty-add'); if(b) b.onclick = ()=> sheetCourse();
+  } else if(pick){
+    const c = course(pick.courseId) || {};
+    const s0=toMin(pick.start), s1=toMin(pick.end);
+    const mins = live ? (s1-nowMin) : (s0-nowMin);
+    const label= live ? 'Şu an' : 'Sıradaki ders';
+    const cd   = live ? 'Bitmesine '+humanMin(mins) : humanMin(mins)+' sonra';
+    const pct  = live ? Math.round((nowMin-s0)/Math.max(1,(s1-s0))*100) : 0;
+    const ci   = (typeof c.color==='number'? c.color%6 : 0);
+    nx.innerHTML =
+      '<div class="nextup" style="--nx:var(--c'+ci+'-fg)">'+
+        '<div class="nextup-label">'+label+'</div>'+
+        '<h1 class="nextup-name">'+esc(c.name||'Ders')+'</h1>'+
+        '<div class="nextup-row">'+
+          '<span class="nextup-when">'+esc(pick.start)+'–'+esc(pick.end)+'</span>'+
+          (pick.room ? '<span class="chip">'+esc(pick.room)+'</span>' : '')+
+          '<span class="countdown'+(live?' is-live':'')+'">'+cd+'</span>'+
+        '</div>'+
+        (live ? '<div class="progress"><i style="width:'+Math.min(100,Math.max(0,pct))+'%"></i></div>' : '')+
+      '</div>';
+  } else {
+    const rest = nextClassAhead(di);
+    nx.innerHTML =
+      '<div class="nextup">'+
+        '<div class="nextup-label">'+(list.length?'Bugün bitti':'Bugün ders yok')+'</div>'+
+        '<h1 class="nextup-name">'+(list.length?'Günü tamamladın':'Boş gün')+'</h1>'+
+        '<div class="nextup-row"><span class="nextup-when">'+
+          (rest ? esc(rest) : 'Programda başka ders görünmüyor')+
+        '</span></div>'+
+      '</div>';
+  }
+
+  /* --- bugünün ders listesi + yoklama --- */
+  const tl = $('#today-list');
+  if(!list.length){
+    tl.innerHTML = anySession
+      ? '<div class="empty"><div class="empty-p">'+DAYS[di]+' günü için programda ders yok.</div></div>'
+      : '';
+  } else {
+    const iso = isoToday();
+    tl.innerHTML = list.map(s=>{
+      const c = course(s.courseId)||{};
+      const mk = S.marks[s.id+'__'+iso];
+      return '<div class="att-wrap" style="margin-bottom:10px">'+
+        slotHTML(s,c,{dim: mk==='yok'})+
+        '<div class="att">'+
+          '<button class="att-btn'+(mk==='var'?' on-yes':'')+'" data-mark="var" data-sid="'+s.id+'">Katıldım</button>'+
+          '<button class="att-btn'+(mk==='yok'?' on-no':'')+'" data-mark="yok" data-sid="'+s.id+'">Gelmedim</button>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+  }
+
+  /* --- yaklaşan ödevler --- */
+  const soon = S.tasks.filter(t2=>!t2.done && t2.termId===S.activeTerm)
+    .sort((a,b)=> String(a.due).localeCompare(String(b.due)))
+    .slice(0,4);
+  $('#soon-list').innerHTML = soon.length
+    ? soon.map(taskHTML).join('')
+    : '<div class="empty"><div class="empty-p">Bekleyen ödev ya da sınav yok.</div></div>';
+}
+
+function humanMin(m){
+  if(m<1) return 'birazdan';
+  if(m<60) return m+' dakika';
+  const h=Math.floor(m/60), r=m%60;
+  return h+' saat'+(r? ' '+r+' dk':'');
+}
+function nextClassAhead(fromDay){
+  for(let i=1;i<=7;i++){
+    const d=(fromDay+i)%7, l=sessionsOf(d);
+    if(l.length){
+      const c=course(l[0].courseId)||{};
+      return (i===1?'Yarın':DAYS[d])+' '+l[0].start+' · '+(c.name||'Ders');
+    }
+  }
+  return '';
+}
+function slotHTML(s,c,opt){
+  opt=opt||{};
+  return '<div class="slot'+(opt.dim?' is-done':'')+'" style="--sc:var(--c'+((c.color||0)%6)+'-fg)">'+
+    '<div class="slot-time"><b>'+esc(s.start)+'</b><span>'+esc(s.end)+'</span></div>'+
+    '<div class="slot-bar"></div>'+
+    '<div class="slot-body">'+
+      '<div class="slot-name">'+esc(c.name||'Ders')+'</div>'+
+      '<div class="slot-sub">'+
+        (c.code?'<span>'+esc(c.code)+'</span>':'')+
+        (s.room?'<span>'+esc(s.room)+'</span>':'')+
+        (c.teacher?'<span>'+esc(c.teacher)+'</span>':'')+
+      '</div>'+
+    '</div>'+
+  '</div>';
+}
+
+/* ============================================================
+   PROGRAM
+   ============================================================ */
+function renderProgram(){
+  const td = todayIdx();
+  $('#daybar').innerHTML = DAYS_S.map((d,i)=>{
+    const n = sessionsOf(i).length;
+    return '<button class="day-pill'+(ui.day===i?' is-on':'')+(i===td?' is-today':'')+'" data-day="'+i+'">'+
+      d+'<small>'+(n?n+' DERS':'—')+'</small></button>';
+  }).join('');
+
+  const list = sessionsOf(ui.day);
+  $('#day-list').innerHTML = list.length
+    ? list.map(s=>{
+        const c=course(s.courseId)||{};
+        return '<button class="slot" style="--sc:var(--c'+((c.color||0)%6)+'-fg);margin-bottom:9px" data-edit-sess="'+s.id+'">'+
+          '<div class="slot-time"><b>'+esc(s.start)+'</b><span>'+esc(s.end)+'</span></div>'+
+          '<div class="slot-bar"></div>'+
+          '<div class="slot-body">'+
+            '<div class="slot-name">'+esc(c.name||'Ders')+'</div>'+
+            '<div class="slot-sub">'+
+              (c.code?'<span>'+esc(c.code)+'</span>':'')+
+              (s.room?'<span>'+esc(s.room)+'</span>':'')+
+              (c.teacher?'<span>'+esc(c.teacher)+'</span>':'')+
+            '</div>'+
+          '</div>'+
+          '<div class="slot-side"><span class="chip" style="'+cvar(c)+'">Düzenle</span></div>'+
+        '</button>';
+      }).join('')
+    : '<div class="empty"><div class="empty-t">'+DAYS[ui.day]+' boş</div>'+
+      '<div class="empty-p">Bu güne ders eklemek için aşağıdaki düğmeyi kullan.</div></div>';
+
+  renderWeekGrid();
+}
+
+function renderWeekGrid(){
+  const el = $('#week-grid');
+  const all = [0,1,2,3,4,5,6].reduce((a,d)=>a.concat(sessionsOf(d)),[]);
+  if(!all.length){
+    el.innerHTML='<div class="empty"><div class="empty-p">Ders eklendikçe haftalık tablo burada oluşur.</div></div>';
+    return;
+  }
+  const dayIdx = all.some(s=>s.day>4) ? [0,1,2,3,4,5,6] : [0,1,2,3,4];
+  let lo=24*60, hi=0;
+  all.forEach(s=>{ lo=Math.min(lo,toMin(s.start)); hi=Math.max(hi,toMin(s.end)); });
+  const h0=Math.floor(lo/60), h1=Math.ceil(hi/60), rows=Math.max(1,h1-h0), PX=56, td=todayIdx();
+
+  let hours='<div class="grid-head"></div>';
+  for(let h=h0; h<h1; h++) hours += '<div class="grid-hour">'+String(h).padStart(2,'0')+'</div>';
+
+  const cols = dayIdx.map(d=>{
+    let lines='';
+    for(let h=h0; h<h1; h++) lines += '<div class="grid-line"></div>';
+    const blocks = sessionsOf(d).map(s=>{
+      const c=course(s.courseId)||{};
+      const top=(toMin(s.start)-h0*60)/60*PX;
+      const hgt=Math.max(24,(toMin(s.end)-toMin(s.start))/60*PX-3);
+      return '<button class="gblock" style="'+cvar(c)+';top:'+top+'px;height:'+hgt+'px" data-edit-sess="'+s.id+'">'+
+        '<b>'+esc(c.name||'Ders')+'</b><span>'+esc(s.start)+'</span></button>';
+    }).join('');
+    return '<div class="grid-col">'+
+      '<div class="grid-head'+(d===td?' is-today':'')+'">'+DAYS_S[d]+'</div>'+
+      '<div class="grid-body" style="height:'+(rows*PX)+'px">'+lines+blocks+'</div>'+
+    '</div>';
+  }).join('');
+
+  el.innerHTML = '<div class="gridwrap"><div class="grid"><div class="grid-hours">'+hours+'</div>'+cols+'</div></div>';
+}
+
+/* ============================================================
+   ÖDEVLER
+   ============================================================ */
+function taskHTML(t){
+  const c = course(t.courseId)||{};
+  const dl = daysLeft(t.due);
+  let tone='', txt='';
+  if(t.done){ tone='tone-ok'; txt='Bitti'; }
+  else if(dl<0){ tone='tone-alert'; txt=Math.abs(dl)+' gün gecikti'; }
+  else if(dl===0){ tone='tone-alert'; txt='Bugün'; }
+  else if(dl===1){ tone='tone-warn'; txt='Yarın'; }
+  else if(dl<=3){ tone='tone-warn'; txt=dl+' gün kaldı'; }
+  else { txt=dl+' gün kaldı'; }
+
+  return '<div class="task'+(t.done?' is-done':'')+'" style="margin-bottom:9px">'+
+    '<button class="tick'+(t.done?' on':'')+'" data-toggle="'+t.id+'" aria-label="Bitti işaretle">'+
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5.2 5.2L20 7"/></svg>'+
+    '</button>'+
+    '<button class="task-body" data-edit-task="'+t.id+'" style="text-align:left">'+
+      '<div class="task-name">'+esc(t.title)+'</div>'+
+      '<div class="task-meta">'+
+        (c.name?'<span class="chip tone-course" style="'+cvar(c)+'">'+esc(c.name)+'</span>':'')+
+        '<span class="chip">'+esc(TYPES[t.type]||'Ödev')+'</span>'+
+        '<span class="chip '+tone+'">'+esc(fmtDate(t.due))+' · '+txt+'</span>'+
+      '</div>'+
+    '</button>'+
+  '</div>';
+}
+
+function renderTasks(){
+  let list = S.tasks.filter(t=>t.termId===S.activeTerm);
+  if(ui.filter==='acik')  list = list.filter(t=>!t.done);
+  if(ui.filter==='biten') list = list.filter(t=>t.done);
+  list.sort((a,b)=>{
+    if(a.done!==b.done) return a.done?1:-1;
+    return String(a.due).localeCompare(String(b.due));
+  });
+  $('#task-list').innerHTML = list.length
+    ? list.map(taskHTML).join('')
+    : '<div class="empty"><div class="empty-t">'+
+        (ui.filter==='biten'?'Tamamlanan yok':'Liste temiz')+'</div>'+
+      '<div class="empty-p">Bu döneme ait ödev, sınav, proje ve sunumları buraya ekle; '+
+      'teslim tarihi yaklaşanlar Bugün sekmesinde öne çıkar.</div></div>';
+}
+
+/* ============================================================
+   DURUM — ortalama, dönemler, devamsızlık
+   ============================================================ */
+function renderDurum(){
+  renderGpaHeader();
+  renderGradeList();
+  renderTermList();
+  renderAbsence();
+}
+
+/* --- DNO / AGNO --- */
+function renderGpaHeader(){
+  const dno  = gpaOf(termCourses());
+  const agno = gpaOf(S.courses);
+  $('#dno').textContent = dno.gpa!=null ? dno.gpa.toFixed(2) : '—';
+  $('#dno').classList.toggle('is-muted', dno.gpa==null);
+  $('#dno-sub').textContent = dno.gpa!=null ? dno.credits+' AKTS · '+dno.count+' ders' : 'not girilmedi';
+  $('#agno').textContent = agno.gpa!=null ? agno.gpa.toFixed(2) : '—';
+  $('#agno').classList.toggle('is-muted', agno.gpa==null);
+  $('#agno-sub').textContent = agno.gpa!=null
+    ? agno.credits+' AKTS · '+S.terms.length+' dönem'
+    : 'not girilmedi';
+
+  /* --- onur ve başarı durumu --- */
+  const at = activeTerm();
+  const parts = [];
+  const passing = (agno.gpa==null) || agno.gpa>=PASS_GPA;
+
+  if(at.season==='yaz'){
+    if(dno.gpa!=null) parts.push('<span class="chip">Yaz okulu onur sıralamasına girmez</span>');
+  } else if(dno.gpa!=null && passing){
+    if(dno.gpa>=HIGH_HONOR)  parts.push(honorChip('Yarıyıl yüksek onur öğrencisi'));
+    else if(dno.gpa>=HONOR)  parts.push(honorChip('Yarıyıl onur öğrencisi'));
+  }
+
+  if(agno.gpa!=null){
+    if(agno.gpa>=PASS_GPA)
+      parts.push('<span class="chip tone-ok">Genel durum: başarılı</span>');
+    else if(agno.gpa>=RETRY_GPA)
+      parts.push('<span class="chip tone-warn">AGNO '+PASS_GPA.toFixed(2)+' altında · başarısız sayılıyor</span>');
+    else
+      parts.push('<span class="chip tone-alert">AGNO '+RETRY_GPA.toFixed(2)+' altında · ders tekrarı gündeme gelir</span>');
+  }
+  $('#stat-foot').innerHTML = parts.join('');
+}
+function honorChip(text){
+  return '<span class="honor">'+
+    '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">'+
+      '<path d="M12 2.6l2.6 5.9 6.4.6-4.8 4.3 1.4 6.3L12 16.4 6.4 19.7l1.4-6.3L3 9.1l6.4-.6z"/></svg>'+
+    esc(text)+'</span>';
+}
+
+/* --- bu dönemin notları --- */
+function badgeHTML(c){
+  const g = gradeOf(c);
+  const t = gradeTone(g);
+  return '<button class="letter-badge'+(t?' '+t:'')+'" data-badge="'+c.id+'" data-status="'+c.id+'" '+
+    'aria-label="'+esc(c.name)+' not durumunu değiştir">'+gradeText(g)+'</button>';
+}
+function refreshBadge(c){
+  const b = document.querySelector('[data-badge="'+c.id+'"]');
+  if(!b) return;
+  const g = gradeOf(c), t = gradeTone(g);
+  b.className = 'letter-badge'+(t?' '+t:'');
+  b.innerHTML = gradeText(g);
+}
+function renderGradeList(){
+  const mine = termCourses();
+  $('#grade-eyebrow').textContent = termLabel(activeTerm())+' notları';
+  $('#grade-list').innerHTML = mine.length
+    ? mine.map(c=>
+        '<div class="grade-row">'+
+          '<div class="grade-head">'+
+            '<button class="chip tone-course" style="'+cvar(c)+'" data-edit-grade="'+c.id+'">'+
+              esc((c.code||c.name||'?').slice(0,8))+'</button>'+
+            '<button class="grade-name" data-edit-grade="'+c.id+'">'+esc(c.name)+'</button>'+
+          '</div>'+
+          '<div class="grade-fields">'+
+            '<label class="field-mini"><span>AKTS</span>'+
+              '<input class="mini-input" type="number" min="0" max="30" step="1" inputmode="numeric" '+
+              'value="'+esc(c.credit==null?'':c.credit)+'" data-credit="'+c.id+'" '+
+              'aria-label="'+esc(c.name)+' AKTS kredisi"></label>'+
+            '<label class="field-mini"><span>Not</span>'+
+              '<input class="mini-input" type="number" min="0" max="100" step="1" inputmode="numeric" '+
+              'value="'+(c.status?'':esc(c.score==null?'':c.score))+'" placeholder="—" data-score="'+c.id+'" '+
+              (c.status?'disabled ':'')+
+              'aria-label="'+esc(c.name)+' notu, 100 üzerinden"></label>'+
+            badgeHTML(c)+
+          '</div>'+
+        '</div>').join('')
+    : '<div class="empty empty-flat"><div class="empty-p">Bu dönemde ders yok. '+
+      'Programlı ders için Program sekmesini, sadece notu tutulacak dersler için alttaki düğmeyi kullan.</div></div>';
+
+  $('#scale-note').innerHTML = '<div class="scale">'+
+    SCALE.map((r,i)=>'<span class="scale-cell"><b>'+r[1]+'</b>'+
+      r[0]+'–'+(i===0?100:SCALE[i-1][0]-1)+'</span>').join('')+
+    '</div>'+
+    '<div style="margin-top:9px">Sayısal not yerine <b>'+SPECIALS.map(s=>s[0]).join('</b>, <b>')+'</b> '+
+    'verildiyse sağdaki not rozetine dokunup seç.</div>';
+}
+
+/* --- dönem geçmişi --- */
+function renderTermList(){
+  $('#term-list').innerHTML = termsSorted().map(t=>{
+    const g = gpaOf(termCourses(t.id));
+    return '<div class="term-row'+(t.id===S.activeTerm?' is-on':'')+'">'+
+      '<button class="term-main" data-switch-term="'+t.id+'">'+
+        '<span class="term-name">'+esc(termLabel(t))+'</span>'+
+        '<span class="term-gpa">'+(g.gpa!=null?g.gpa.toFixed(2):'—')+'</span>'+
+      '</button>'+
+      '<span class="term-cr">'+(g.credits?g.credits+' AKTS':'—')+'</span>'+
+      '<button class="chip" data-edit-term="'+t.id+'">Düzenle</button>'+
+    '</div>';
+  }).join('');
+}
+
+/* --- devamsızlık (yalnızca programı olan dersler) --- */
+function renderAbsence(){
+  const at = activeTerm();
+  const withSessions = termCourses().filter(c=> weeklyHours(c.id)>0 );
+  $('#absence-list').innerHTML = withSessions.length
+    ? withSessions.map(c=>{
+        const used = absenceHours(c.id);
+        const lim  = absenceLimit(c.id);
+        const pct  = lim? Math.min(100, Math.round(used/lim*100)) : 0;
+        const lvl  = pct>=100?'lvl-bad' : pct>=70?'lvl-warn' : '';
+        return '<div class="meter-row">'+
+          '<div class="meter-top">'+
+            '<span class="meter-name">'+esc(c.name)+'</span>'+
+            '<span class="meter-num">'+used+' / '+lim+' saat</span>'+
+          '</div>'+
+          '<div class="meter-track"><div class="meter-fill '+lvl+'" style="width:'+pct+'%"></div></div>'+
+          '<div>'+
+            (used>lim ? '<span class="chip tone-alert">Sınır aşıldı · NA riski</span>'
+             : pct>=70 ? '<span class="chip tone-warn">Sınıra yakın · '+(lim-used)+' saat kaldı</span>'
+                       : '<span class="chip tone-ok">'+(lim-used)+' saat hakkın var</span>')+
+          '</div>'+
+        '</div>';
+      }).join('')
+    : '<div class="empty empty-flat"><div class="empty-p">Programa ders eklendiğinde devamsızlık takibi burada başlar.</div></div>';
+
+  $('#absence-note').textContent =
+    termLabel(at)+' · '+(at.weeks||14)+' hafta, devamsızlık sınırı %'+(at.rate||30)+
+    '. Saatler Bugün sekmesindeki "Gelmedim" işaretlerinden toplanır.';
+}
+
+/* ============================================================
+   alt sayfa (sheet)
+   ============================================================ */
+function openSheet(html){
+  $('#sheet-body').innerHTML = html;
+  $('#veil').classList.add('is-open');
+  requestAnimationFrame(()=> $('#sheet').classList.add('is-open'));
+  document.body.style.overflow='hidden';
+}
+function closeSheet(){
+  $('#sheet').classList.remove('is-open');
+  $('#veil').classList.remove('is-open');
+  document.body.style.overflow='';
+}
+
+/* --- dönem ekle / düzenle --- */
+function sheetTerm(id){
+  const t = id ? term(id) : null;
+  const isNew = !t;
+  const nowY = new Date().getFullYear();
+  const years = [];
+  for(let y=nowY+1; y>=nowY-9; y--) years.push(y+'-'+(y+1));
+  const cur = t ? t.year : currentTermSpec().year;
+  if(years.indexOf(cur)<0) years.unshift(cur);
+
+  const nCourse = t ? termCourses(t.id).length : 0;
+
+  openSheet(
+    '<h2 class="sheet-h">'+(isNew?'Yeni dönem':'Dönemi düzenle')+'</h2>'+
+    '<form id="f-term">'+
+      '<div class="field"><label class="label" for="ftm-year">Akademik yıl</label>'+
+      '<select class="input" id="ftm-year">'+
+        years.map(y=>'<option value="'+y+'"'+(y===cur?' selected':'')+'>'+y+'</option>').join('')+
+      '</select></div>'+
+      '<div class="field"><span class="label">Dönem</span><div class="seg" id="ftm-season">'+
+        SEASONS.map(s=>'<button type="button" class="seg-btn'+
+          (((t?t.season:currentTermSpec().season)===s[0])?' is-on':'')+'" data-season="'+s[0]+'">'+s[1]+'</button>').join('')+
+      '</div></div>'+
+      '<div class="field-row">'+
+        '<div class="field"><label class="label" for="ftm-weeks">Kaç hafta</label>'+
+        '<input class="input" id="ftm-weeks" type="number" min="1" max="30" inputmode="numeric" value="'+(t?t.weeks:14)+'"></div>'+
+        '<div class="field"><label class="label" for="ftm-rate">Devamsızlık %</label>'+
+        '<input class="input" id="ftm-rate" type="number" min="1" max="100" inputmode="numeric" value="'+(t?t.rate:30)+'"></div>'+
+      '</div>'+
+      '<div class="note">Hafta sayısı ve yüzde, o dönemin devamsızlık sınırını belirler. Yaz okulu gibi kısa dönemlerde hafta sayısını düşürmek yeterli.</div>'+
+      '<div class="sheet-actions" style="margin-top:14px">'+
+        '<button type="button" class="btn btn-ghost" id="ftm-cancel">Vazgeç</button>'+
+        '<button type="submit" class="btn">'+(isNew?'Dönemi oluştur':'Kaydet')+'</button>'+
+      '</div>'+
+      (!isNew && S.terms.length>1
+        ? '<button type="button" class="btn btn-ghost btn-wide btn-danger" id="ftm-del" style="margin-top:10px">'+
+          'Dönemi sil'+(nCourse?' ('+nCourse+' ders gider)':'')+'</button>'
+        : '')+
+    '</form>'
+  );
+
+  let season = t ? t.season : currentTermSpec().season;
+  $('#ftm-season').onclick = e=>{
+    const b=e.target.closest('[data-season]'); if(!b) return;
+    season=b.dataset.season;
+    $$('.seg-btn',$('#ftm-season')).forEach(x=>x.classList.remove('is-on'));
+    b.classList.add('is-on');
+  };
+  $('#ftm-cancel').onclick = ()=> isNew ? closeSheet() : sheetTerms();
+
+  const del = $('#ftm-del');
+  if(del) del.onclick = ()=>{
+    if(!del.dataset.sure){ del.dataset.sure='1'; del.textContent='Emin misin? Tekrar bas'; return; }
+    snapPush(true);
+    const ids = termCourses(t.id).map(c=>c.id);
+    const sids = S.sessions.filter(s=>ids.indexOf(s.courseId)>=0).map(s=>s.id);
+    S.courses  = S.courses.filter(c=>c.termId!==t.id);
+    S.sessions = S.sessions.filter(s=>ids.indexOf(s.courseId)<0);
+    S.tasks    = S.tasks.filter(x=>x.termId!==t.id);
+    Object.keys(S.marks).forEach(k=>{ if(sids.indexOf(k.split('__')[0])>=0) delete S.marks[k]; });
+    S.terms = S.terms.filter(x=>x.id!==t.id);
+    if(S.activeTerm===t.id) S.activeTerm = S.terms[0].id;
+    save(); closeSheet(); renderAll(); toast('Dönem silindi');
+  };
+
+  $('#f-term').onsubmit = e=>{
+    e.preventDefault();
+    const year  = $('#ftm-year').value;
+    const weeks = Math.max(1, Math.min(30, +$('#ftm-weeks').value||14));
+    const rate  = Math.max(1, Math.min(100, +$('#ftm-rate').value||30));
+    const clash = S.terms.find(x=>x.year===year && x.season===season && (!t || x.id!==t.id));
+    if(clash){ toast('Bu dönem zaten var'); return; }
+    if(t){ t.year=year; t.season=season; t.weeks=weeks; t.rate=rate; }
+    else{
+      const nt = {id:uid(), year:year, season:season, weeks:weeks, rate:rate};
+      S.terms.push(nt); S.activeTerm=nt.id;
+    }
+    save(); closeSheet(); renderAll(); toast(t?'Dönem güncellendi':'Dönem eklendi');
+  };
+}
+
+/* --- dönem seçici --- */
+function sheetTerms(){
+  openSheet(
+    '<h2 class="sheet-h">Dönem seç</h2>'+
+    '<div class="card" style="margin-bottom:14px">'+
+      termsSorted().map(t=>{
+        const g = gpaOf(termCourses(t.id));
+        const n = termCourses(t.id).length;
+        return '<div class="term-row'+(t.id===S.activeTerm?' is-on':'')+'">'+
+          '<button class="term-main" data-switch-term="'+t.id+'">'+
+            '<span class="term-name">'+esc(termLabel(t))+'</span>'+
+            '<span class="term-gpa">'+(g.gpa!=null?g.gpa.toFixed(2):'—')+'</span>'+
+          '</button>'+
+          '<span class="term-cr">'+n+' ders</span>'+
+          '<button class="chip" data-edit-term="'+t.id+'">Düzenle</button>'+
+        '</div>';
+      }).join('')+
+    '</div>'+
+    '<button class="btn btn-wide" id="ft-new">Yeni dönem ekle</button>'+
+    '<div class="note" style="margin-top:12px">Geçmiş yılları da ekleyip notlarını girersen genel ortalaman (AGNO) hepsini kapsar.</div>'
+  );
+  $('#ft-new').onclick = ()=> sheetTerm();
+}
+
+/* --- programlı ders ekle / düzenle --- */
+function sheetCourse(sessId){
+  const sess = sessId ? S.sessions.find(s=>s.id===sessId) : null;
+  const c    = sess ? (course(sess.courseId)||{}) : {};
+  const isNew= !sess;
+  const pool = termCourses();
+
+  openSheet(
+    '<h2 class="sheet-h">'+(isNew?'Yeni ders saati':'Dersi düzenle')+'</h2>'+
+    '<form id="f-course">'+
+      (pool.length && isNew ?
+        '<div class="field"><label class="label" for="fc-exist">Mevcut derse saat ekle</label>'+
+        '<select class="input" id="fc-exist"><option value="">— Yeni ders oluştur —</option>'+
+        pool.map(x=>'<option value="'+x.id+'">'+esc(x.name)+'</option>').join('')+
+        '</select></div>' : '')+
+
+      '<div id="fc-new">'+
+        '<div class="field"><label class="label" for="fc-name">Ders adı</label>'+
+        '<input class="input" id="fc-name" placeholder="Genel Kimya II" value="'+esc(c.name||'')+'" required></div>'+
+        '<div class="field-row">'+
+          '<div class="field"><label class="label" for="fc-code">Kod</label>'+
+          '<input class="input" id="fc-code" placeholder="KIM102" value="'+esc(c.code||'')+'"></div>'+
+          '<div class="field"><label class="label" for="fc-teacher">Hoca</label>'+
+          '<input class="input" id="fc-teacher" placeholder="Dr. Yılmaz" value="'+esc(c.teacher||'')+'"></div>'+
+        '</div>'+
+        '<div class="field"><span class="label">Renk</span>'+
+        '<div class="swatches" id="fc-colors">'+
+          COLORS.map((n,i)=>'<button type="button" class="swatch'+(((c.color||0)===i)?' is-on':'')+'" '+
+            'style="--sw:var(--c'+i+'-fg)" data-color="'+i+'" aria-label="'+n+'"><i></i></button>').join('')+
+        '</div></div>'+
+      '</div>'+
+
+      '<div class="divider"></div>'+
+
+      '<div class="field"><label class="label" for="fc-day">Gün</label>'+
+      '<select class="input" id="fc-day">'+
+        DAYS.map((d,i)=>'<option value="'+i+'"'+((sess?sess.day:ui.day)===i?' selected':'')+'>'+d+'</option>').join('')+
+      '</select></div>'+
+      '<div class="field-row">'+
+        '<div class="field"><label class="label" for="fc-start">Başlangıç</label>'+
+        '<input class="input" id="fc-start" type="time" value="'+esc(sess?sess.start:'09:00')+'" required></div>'+
+        '<div class="field"><label class="label" for="fc-end">Bitiş</label>'+
+        '<input class="input" id="fc-end" type="time" value="'+esc(sess?sess.end:'10:50')+'" required></div>'+
+      '</div>'+
+      '<div class="field"><label class="label" for="fc-room">Derslik</label>'+
+      '<input class="input" id="fc-room" placeholder="B-204" value="'+esc(sess?(sess.room||''):'')+'"></div>'+
+
+      '<div class="sheet-actions">'+
+        '<button type="button" class="btn btn-ghost" id="fc-cancel">Vazgeç</button>'+
+        '<button type="submit" class="btn">Kaydet</button>'+
+      '</div>'+
+      (isNew ? '' :
+        '<button type="button" class="btn btn-ghost btn-wide btn-danger" id="fc-del" style="margin-top:10px">Bu saati sil</button>'+
+        '<button type="button" class="btn btn-ghost btn-wide btn-danger" id="fc-delall" style="margin-top:8px">Dersi tamamen sil</button>')+
+    '</form>'
+  );
+
+  let color = c.color||0;
+  const swWrap = $('#fc-colors');
+  swWrap.onclick = e=>{
+    const b=e.target.closest('[data-color]'); if(!b) return;
+    color = +b.dataset.color;
+    $$('.swatch',swWrap).forEach(x=>x.classList.remove('is-on'));
+    b.classList.add('is-on');
+  };
+
+  const exist = $('#fc-exist');
+  if(exist) exist.onchange = ()=>{
+    $('#fc-new').style.display = exist.value ? 'none' : '';
+    $('#fc-name').required = !exist.value;
+  };
+
+  $('#fc-cancel').onclick = closeSheet;
+  const del = $('#fc-del');
+  if(del) del.onclick = ()=>{
+    S.sessions = S.sessions.filter(s=>s.id!==sess.id);
+    Object.keys(S.marks).forEach(k=>{ if(k.indexOf(sess.id+'__')===0) delete S.marks[k]; });
+    save(); closeSheet(); renderAll(); toast('Ders saati silindi');
+  };
+  const delAll = $('#fc-delall');
+  if(delAll) delAll.onclick = ()=>{
+    if(!delAll.dataset.sure){
+      delAll.dataset.sure='1';
+      delAll.textContent='Notu ve devamsızlığı da gider — tekrar bas';
+      return;
+    }
+    removeCourse(sess.courseId);
+  };
+
+  $('#f-course').onsubmit = e=>{
+    e.preventDefault();
+    const day=+$('#fc-day').value, st=$('#fc-start').value, en=$('#fc-end').value;
+    if(toMin(en)<=toMin(st)){ toast('Bitiş saati başlangıçtan sonra olmalı'); return; }
+
+    let cid;
+    if(exist && exist.value){
+      cid = exist.value;
+    } else if(sess){
+      cid = sess.courseId;
+      const cc = course(cid);
+      if(cc){ cc.name=$('#fc-name').value.trim(); cc.code=$('#fc-code').value.trim();
+              cc.teacher=$('#fc-teacher').value.trim(); cc.color=color; }
+    } else {
+      cid = uid();
+      S.courses.push({id:cid, termId:S.activeTerm, name:$('#fc-name').value.trim(),
+                      code:$('#fc-code').value.trim(), teacher:$('#fc-teacher').value.trim(),
+                      color:color, credit:'', score:''});
+    }
+    if(sess){ sess.day=day; sess.start=st; sess.end=en; sess.room=$('#fc-room').value.trim(); }
+    else S.sessions.push({id:uid(), courseId:cid, day:day, start:st, end:en, room:$('#fc-room').value.trim()});
+
+    save(); closeSheet(); ui.day=day; renderAll(); toast(sess?'Güncellendi':'Ders eklendi');
+  };
+}
+
+/* --- programsız (yalnızca notluk) ders --- */
+function sheetGradeCourse(id){
+  const c = id ? (course(id)||{}) : {};
+  const isNew = !id;
+  openSheet(
+    '<h2 class="sheet-h">'+(isNew?'Programsız ders':'Dersi düzenle')+'</h2>'+
+    (isNew ? '<div class="note" style="margin-bottom:14px">Haftalık programa girmeyen ama ortalamaya katılan dersler için: '+
+      'geçmiş yılların dersleri, seçmeliler, staj gibi.</div>' : '')+
+    '<form id="f-grade">'+
+      '<div class="field"><label class="label" for="fg-name">Ders adı</label>'+
+      '<input class="input" id="fg-name" placeholder="Türk Dili I" value="'+esc(c.name||'')+'" required></div>'+
+      '<div class="field-row">'+
+        '<div class="field"><label class="label" for="fg-code">Kod</label>'+
+        '<input class="input" id="fg-code" placeholder="TD101" value="'+esc(c.code||'')+'"></div>'+
+        '<div class="field"><label class="label" for="fg-credit">AKTS</label>'+
+        '<input class="input" id="fg-credit" type="number" min="0" max="30" inputmode="numeric" value="'+esc(c.credit==null?'':c.credit)+'"></div>'+
+      '</div>'+
+      '<div class="field"><label class="label" for="fg-score">Not — 100 üzerinden</label>'+
+      '<input class="input" id="fg-score" type="number" min="0" max="100" inputmode="numeric" '+
+      'placeholder="Henüz belli değil" value="'+esc(c.score==null?'':c.score)+'"></div>'+
+      '<div class="note" id="fg-preview" style="margin-bottom:13px"></div>'+
+      '<div class="field"><span class="label">Renk</span>'+
+      '<div class="swatches" id="fg-colors">'+
+        COLORS.map((n,i)=>'<button type="button" class="swatch'+(((c.color||0)===i)?' is-on':'')+'" '+
+          'style="--sw:var(--c'+i+'-fg)" data-color="'+i+'" aria-label="'+n+'"><i></i></button>').join('')+
+      '</div></div>'+
+      '<div class="sheet-actions">'+
+        '<button type="button" class="btn btn-ghost" id="fg-cancel">Vazgeç</button>'+
+        '<button type="submit" class="btn">Kaydet</button>'+
+      '</div>'+
+      (isNew?'':'<button type="button" class="btn btn-ghost btn-wide btn-danger" id="fg-del" style="margin-top:10px">Dersi sil</button>')+
+    '</form>'
+  );
+
+  let color = c.color||0;
+  const sw = $('#fg-colors');
+  sw.onclick = e=>{
+    const b=e.target.closest('[data-color]'); if(!b) return;
+    color=+b.dataset.color;
+    $$('.swatch',sw).forEach(x=>x.classList.remove('is-on'));
+    b.classList.add('is-on');
+  };
+  const scoreEl = $('#fg-score');
+  function preview(){
+    const g = gradeOf({score: scoreEl.value});
+    $('#fg-preview').innerHTML = g
+      ? 'Harf notu <b>'+esc(g.letter)+'</b>, katsayı <b>'+g.coef.toFixed(2)+'</b> olarak ortalamaya girer.'
+      : 'Not girilince harf ve katsayı burada görünür. Boş bırakılırsa ders ortalamaya katılmaz.';
+  }
+  scoreEl.oninput = preview;
+  preview();
+
+  $('#fg-cancel').onclick = closeSheet;
+  const d=$('#fg-del');
+  if(d) d.onclick = ()=>{
+    if(!d.dataset.sure){ d.dataset.sure='1'; d.textContent='Emin misin? Tekrar bas'; return; }
+    removeCourse(id);
+  };
+
+  $('#f-grade').onsubmit = e=>{
+    e.preventDefault();
+    const data = {
+      name:$('#fg-name').value.trim(), code:$('#fg-code').value.trim(),
+      credit:$('#fg-credit').value, score:scoreEl.value, color:color
+    };
+    if(id) Object.assign(course(id), data);
+    else S.courses.push(Object.assign({id:uid(), termId:S.activeTerm, teacher:''}, data));
+    save(); closeSheet(); renderAll(); toast(id?'Güncellendi':'Ders eklendi');
+  };
+}
+
+/* --- not durumu: sayısal not ya da özel harf --- */
+function sheetStatus(cid){
+  const c = course(cid); if(!c) return;
+  openSheet(
+    '<h2 class="sheet-h">'+esc(c.name)+'</h2>'+
+    '<div class="note" style="margin-bottom:14px">Ders sayısal not yerine özel bir harfle kapandıysa buradan seç. '+
+    'Sayısal nota dönmek için en üstteki seçeneği kullan.</div>'+
+    '<div class="card">'+
+      '<button class="status-row'+(!c.status?' is-on':'')+'" data-set-status="" data-cid="'+c.id+'">'+
+        '<b>Sayısal not</b><span>100 üzerinden girilir, harf ve katsayı hesaplanır</span></button>'+
+      SPECIALS.map(s=>
+        '<button class="status-row'+(c.status===s[0]?' is-on':'')+'" data-set-status="'+s[0]+'" data-cid="'+c.id+'">'+
+          '<b>'+s[0]+' · '+esc(s[1])+'</b><span>'+esc(s[2])+'</span></button>').join('')+
+    '</div>'
+  );
+}
+
+function removeCourse(cid){
+  snapPush(true);
+  const ids = S.sessions.filter(s=>s.courseId===cid).map(s=>s.id);
+  S.sessions = S.sessions.filter(s=>s.courseId!==cid);
+  S.courses  = S.courses.filter(x=>x.id!==cid);
+  S.tasks.forEach(t=>{ if(t.courseId===cid) t.courseId=''; });
+  Object.keys(S.marks).forEach(k=>{ if(ids.indexOf(k.split('__')[0])>=0) delete S.marks[k]; });
+  save(); closeSheet(); renderAll(); toast('Ders silindi');
+}
+
+/* --- ödev ekle / düzenle --- */
+function sheetTask(id){
+  const t = id ? S.tasks.find(x=>x.id===id) : null;
+  const pool = termCourses();
+  openSheet(
+    '<h2 class="sheet-h">'+(t?'Kaydı düzenle':'Yeni ödev / sınav')+'</h2>'+
+    '<form id="f-task">'+
+      '<div class="field"><label class="label" for="ft-title">Başlık</label>'+
+      '<input class="input" id="ft-title" placeholder="Vize sınavı" value="'+esc(t?t.title:'')+'" required></div>'+
+      '<div class="field"><span class="label">Tür</span><div class="seg" id="ft-type">'+
+        Object.keys(TYPES).map(k=>'<button type="button" class="seg-btn'+
+          (((t?t.type:'odev')===k)?' is-on':'')+'" data-type="'+k+'">'+TYPES[k]+'</button>').join('')+
+      '</div></div>'+
+      '<div class="field"><label class="label" for="ft-course">Ders</label>'+
+      '<select class="input" id="ft-course"><option value="">— Ders seçilmedi —</option>'+
+        pool.map(c=>'<option value="'+c.id+'"'+((t&&t.courseId===c.id)?' selected':'')+'>'+esc(c.name)+'</option>').join('')+
+      '</select></div>'+
+      '<div class="field"><label class="label" for="ft-due">Teslim / sınav tarihi</label>'+
+      '<input class="input" id="ft-due" type="date" value="'+esc(t?t.due:isoToday())+'" required></div>'+
+      '<div class="sheet-actions">'+
+        '<button type="button" class="btn btn-ghost" id="ft-cancel">Vazgeç</button>'+
+        '<button type="submit" class="btn">Kaydet</button>'+
+      '</div>'+
+      (t?'<button type="button" class="btn btn-ghost btn-wide btn-danger" id="ft-del" style="margin-top:10px">Sil</button>':'')+
+    '</form>'
+  );
+
+  let type = t?t.type:'odev';
+  $('#ft-type').onclick = e=>{
+    const b=e.target.closest('[data-type]'); if(!b) return;
+    type=b.dataset.type;
+    $$('.seg-btn',$('#ft-type')).forEach(x=>x.classList.remove('is-on'));
+    b.classList.add('is-on');
+  };
+  $('#ft-cancel').onclick = closeSheet;
+  const d=$('#ft-del');
+  if(d) d.onclick=()=>{ S.tasks=S.tasks.filter(x=>x.id!==t.id); save(); closeSheet(); renderAll(); toast('Silindi'); };
+
+  $('#f-task').onsubmit = e=>{
+    e.preventDefault();
+    const data={ title:$('#ft-title').value.trim(), type:type,
+                 courseId:$('#ft-course').value, due:$('#ft-due').value };
+    if(t) Object.assign(t,data);
+    else S.tasks.push(Object.assign({id:uid(), termId:S.activeTerm, done:false}, data));
+    save(); closeSheet(); renderAll(); toast(t?'Güncellendi':'Eklendi');
+  };
+}
+
+/* ============================================================
+   PIN kilidi
+   Amaç: yanlışlıkla silmeyi ve meraklı elleri engellemek.
+   Verileri şifrelemez — cihazı eline alan biri tarayıcı
+   araçlarıyla yine okuyabilir. Bunu ekranda da böyle söylüyoruz.
+   ============================================================ */
+let unlocked = false;
+
+function hashPin(pin){
+  const s = 'ders-defteri|'+pin;
+  try{
+    if(window.crypto && crypto.subtle && window.TextEncoder){
+      return crypto.subtle.digest('SHA-256', new TextEncoder().encode(s))
+        .then(buf=> Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join(''))
+        .catch(()=> weakHash(s));
+    }
+  }catch(e){}
+  return Promise.resolve(weakHash(s));
+}
+function weakHash(s){
+  let h=5381;
+  for(let i=0;i<s.length;i++) h=(((h<<5)+h)+s.charCodeAt(i))>>>0;
+  return 'w'+h.toString(16);
+}
+
+/* mode: 'unlock' | 'set' | 'off' */
+function sheetPin(mode){
+  let buf = '', first = '', step = (mode==='set') ? 1 : 0;
+
+  const texts = {
+    unlock:['Ayarlar kilitli','Devam etmek için PIN\'i gir'],
+    off   :['Kilidi kaldır','Mevcut PIN\'i gir'],
+    set1  :['Yeni PIN belirle','4 haneli bir sayı seç'],
+    set2  :['PIN\'i doğrula','Aynı sayıyı bir daha gir']
+  };
+
+  function head(){
+    if(mode==='set') return step===1 ? texts.set1 : texts.set2;
+    return texts[mode];
+  }
+  function draw(){
+    const h = head();
+    $('#pin-title').textContent = h[0];
+    $('#pin-sub').textContent   = h[1];
+    $$('#pin-dots i').forEach((d,i)=> d.classList.toggle('on', i<buf.length));
+  }
+  function bad(msg){
+    const dots = $('#pin-dots');
+    dots.classList.add('is-bad');
+    setTimeout(()=>{ dots.classList.remove('is-bad'); buf=''; draw(); }, 480);
+    toast(msg);
+  }
+
+  openSheet(
+    '<div class="pin">'+
+      '<div class="pin-title" id="pin-title"></div>'+
+      '<div class="pin-sub" id="pin-sub"></div>'+
+      '<div class="pin-dots" id="pin-dots"><i></i><i></i><i></i><i></i></div>'+
+      '<div class="pin-pad" id="pin-pad">'+
+        [1,2,3,4,5,6,7,8,9].map(n=>'<button type="button" class="pin-key" data-k="'+n+'">'+n+'</button>').join('')+
+        '<button type="button" class="pin-key is-flat" data-k="cancel">Vazgeç</button>'+
+        '<button type="button" class="pin-key" data-k="0">0</button>'+
+        '<button type="button" class="pin-key is-flat" data-k="del" aria-label="Sil">⌫</button>'+
+      '</div>'+
+      (mode==='unlock'
+        ? '<button type="button" class="pin-cancel" id="pin-forgot">PIN\'i mi unuttun?</button>'
+        : '')+
+    '</div>'
+  );
+  draw();
+
+  $('#pin-pad').onclick = e=>{
+    const b = e.target.closest('[data-k]'); if(!b) return;
+    const k = b.dataset.k;
+
+    if(k==='cancel'){ closeSheet(); return; }
+    if(k==='del'){ buf = buf.slice(0,-1); draw(); return; }
+    if(buf.length>=4) return;
+
+    buf += k;
+    draw();
+    if(buf.length<4) return;
+
+    /* dört hane doldu */
+    setTimeout(()=>{
+      if(mode==='set'){
+        if(step===1){ first=buf; buf=''; step=2; draw(); return; }
+        if(buf!==first){ step=1; first=''; bad('PIN\'ler aynı değil, baştan'); return; }
+        hashPin(buf).then(h=>{
+          S.settings.pinHash = h; save();
+          unlocked = true; closeSheet(); toast('Kilit açıldı — PIN belirlendi');
+        });
+        return;
+      }
+      hashPin(buf).then(h=>{
+        if(h !== S.settings.pinHash){ bad('PIN yanlış'); return; }
+        if(mode==='off'){
+          delete S.settings.pinHash; save();
+          unlocked = true; sheetSettings(); toast('Kilit kaldırıldı');
+        } else {
+          unlocked = true; sheetSettings();
+        }
+      });
+    }, 120);
+  };
+
+  const fg = $('#pin-forgot');
+  if(fg) fg.onclick = ()=>{
+    openSheet(
+      '<h2 class="sheet-h">PIN\'i unuttuysan</h2>'+
+      '<div class="note" style="line-height:1.6">PIN yalnızca bu telefonda saklanıyor, bir yerden sorulup öğrenilemiyor. '+
+      'Ayarlar\'a giremezsen uygulamanın geri kalanı normal çalışmaya devam eder — ders programı, ödevler, notlar, hepsi açık.<br><br>'+
+      'Kilidi tamamen sıfırlamanın tek yolu Safari\'den bu sitenin verilerini silmek, o da defteri sıfırlar. '+
+      'Bu yüzden ara sıra <b>Ayarlar → Yedek</b>\'ten kopya alıp bir yere kaydetmek önemli.</div>'+
+      '<button class="btn btn-wide" id="pf-back" style="margin-top:14px">Geri</button>'
+    );
+    $('#pf-back').onclick = ()=> sheetPin('unlock');
+  };
+}
+
+function openSettings(){
+  if(S.settings.pinHash && !unlocked) sheetPin('unlock');
+  else sheetSettings();
+}
+
+/* --- ayarlar --- */
+function fmtWhen(ts){
+  if(!ts) return 'henüz yok';
+  const d = new Date(Number(ts));
+  return d.toLocaleDateString('tr-TR',{day:'numeric',month:'long'})+', '+
+         d.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
+}
+function diagRow(label, ok, okText, badText){
+  const tone = ok===null ? '' : (ok ? 'tone-ok' : 'tone-alert');
+  const text = ok===null ? 'bilinmiyor' : (ok ? okText : badText);
+  return '<div class="diag"><span>'+label+'</span><span class="chip '+tone+'">'+text+'</span></div>';
+}
+function storageReport(){
+  return '<div class="diag-box">'+
+    '<div class="diag"><span>Açılış biçimi</span><span class="chip '+
+      (ENV.isFile ? 'tone-alert' : (ENV.standalone ? 'tone-ok' : ''))+'">'+
+      (ENV.isFile ? 'dosya — kayıt tutulmaz' : (ENV.standalone ? 'ana ekran uygulaması' : 'tarayıcı sekmesi'))+
+    '</span></div>'+
+    diagRow('Tarayıcı deposu', health.ls, 'çalışıyor', 'yazılamıyor')+
+    diagRow('Yedek depo (IndexedDB)', health.db, 'çalışıyor', 'kullanılamıyor')+
+    diagRow('Sayfa çerçeve içinde mi', !health.framed, 'hayır', 'evet — riskli')+
+    diagRow('Kalıcı depolama izni', health.persisted, 'verildi', 'verilmedi')+
+    '<div class="diag"><span>Son kayıt</span><span class="chip">'+esc(fmtWhen(health.savedAt))+'</span></div>'+
+    '<div class="diag"><span>Son yedek alma</span><span class="chip">'+esc(fmtWhen(S.settings.lastBackup))+'</span></div>'+
+  '</div>';
+}
+function sheetSettings(){
+  openSheet(
+    '<h2 class="sheet-h">Ayarlar</h2>'+
+    '<div class="field"><span class="label">Görünüm</span><div class="seg" id="fs-theme">'+
+      [['auto','Sistem'],['light','Açık'],['dark','Koyu']].map(x=>
+        '<button type="button" class="seg-btn'+(S.settings.theme===x[0]?' is-on':'')+'" data-theme="'+x[0]+'">'+x[1]+'</button>').join('')+
+    '</div></div>'+
+    '<div class="note">Dönem uzunluğu ve devamsızlık sınırı her döneme ayrı ayarlanır — üstteki dönem düğmesinden Düzenle\'ye bas.</div>'+
+
+    '<div class="divider"></div>'+
+    '<div class="field"><span class="label">Kilit</span>'+
+      '<div class="note" style="margin-bottom:9px">'+
+        (S.settings.pinHash
+          ? 'Ayarlar 4 haneli PIN ile kilitli. Silme düğmesi de burada olduğu için kilidi açık tutmanı öneririm.'
+          : 'Ayarlar şu an herkese açık — bu ekranda verileri silme düğmesi var. 4 haneli bir PIN koyarsan Ayarlar\'a girerken sorulur.')+
+        '<br><br>Bu kilit yanlışlıkla silmeyi önler; verileri şifrelemez.'+
+      '</div>'+
+      (S.settings.pinHash
+        ? '<div class="sheet-actions" style="margin-top:0">'+
+            '<button type="button" class="btn btn-ghost" id="fs-pin-change">PIN\'i değiştir</button>'+
+            '<button type="button" class="btn btn-ghost" id="fs-pin-off">Kilidi kaldır</button>'+
+          '</div>'
+        : '<button type="button" class="btn btn-wide" id="fs-pin-on">PIN belirle</button>')+
+    '</div>'+
+
+    '<div class="divider"></div>'+
+    '<div class="field"><span class="label">Depolama durumu</span>'+ storageReport() +'</div>'+
+
+    '<div class="divider"></div>'+
+    '<div class="field"><span class="label">Otomatik yedekler</span>'+
+      '<div class="note" style="margin-bottom:9px">Uygulama defterin son hâllerini kendiliğinden saklar. '+
+      'Yanlışlıkla bir ders ya da dönem sildiysen buradan geri dönebilirsin.</div>'+
+      '<div class="card" id="fs-snaps"></div>'+
+    '</div>'+
+
+    '<div class="divider"></div>'+
+    '<div class="field"><span class="label">Elle yedek</span>'+
+    '<div class="note" style="margin-bottom:8px">Veriler yalnızca bu telefonun tarayıcısında durur. Başka bir cihaza taşımak ya da güvenli bir yere kopyalamak için aşağıdaki metni kopyala; geri yüklerken buraya yapıştırıp Geri yükle\'ye bas.</div>'+
+    '<textarea class="input" id="fs-json" spellcheck="false" aria-label="Yedek verisi">'+esc(JSON.stringify(S))+'</textarea></div>'+
+    '<div class="sheet-actions">'+
+      '<button type="button" class="btn btn-ghost" id="fs-copy">Kopyala</button>'+
+      '<button type="button" class="btn btn-ghost" id="fs-restore">Geri yükle</button>'+
+    '</div>'+
+
+    '<div class="divider"></div>'+
+    '<div class="danger">'+
+      '<b>Tehlikeli bölge</b>'+
+      '<p>Aşağıdaki düğme dersleri, notları, devamsızlığı ve otomatik yedekleri kalıcı olarak siler. '+
+      'Geri dönüşü yoktur. Devam etmek için kutuya <b>SİL</b> yaz.</p>'+
+      '<input class="input" id="fs-del-word" placeholder="SİL" autocapitalize="characters" '+
+      'autocomplete="off" spellcheck="false" aria-label="Silmeyi onaylamak için SİL yaz">'+
+      '<button type="button" class="btn btn-danger btn-wide" id="fs-reset" disabled>Tüm verileri sil</button>'+
+    '</div>'
+  );
+
+  renderSnapList();
+
+  const pinOn = $('#fs-pin-on');
+  if(pinOn) pinOn.onclick = ()=> sheetPin('set');
+  const pinCh = $('#fs-pin-change');
+  if(pinCh) pinCh.onclick = ()=> sheetPin('set');
+  const pinOff = $('#fs-pin-off');
+  if(pinOff) pinOff.onclick = ()=> sheetPin('off');
+
+  const word = $('#fs-del-word'), resetBtn = $('#fs-reset');
+  word.oninput = ()=>{
+    const v = word.value.trim().toLocaleUpperCase('tr-TR');
+    resetBtn.disabled = !(v==='SİL' || v==='SIL');
+  };
+
+  $('#fs-theme').onclick = e=>{
+    const b=e.target.closest('[data-theme]'); if(!b) return;
+    S.settings.theme=b.dataset.theme; save(); applyTheme();
+    $$('.seg-btn',$('#fs-theme')).forEach(x=>x.classList.remove('is-on'));
+    b.classList.add('is-on');
+  };
+  $('#fs-copy').onclick = ()=>{
+    const ta=$('#fs-json'); ta.focus(); ta.select(); ta.setSelectionRange(0,999999);
+    let ok=false;
+    try{ ok=document.execCommand('copy'); }catch(e){}
+    const noted = ()=>{ S.settings.lastBackup = Date.now(); save(); };
+    if(!ok && navigator.clipboard){
+      navigator.clipboard.writeText(ta.value).then(()=>{ noted(); toast('Kopyalandı'); });
+      return;
+    }
+    if(ok) noted();
+    toast(ok?'Kopyalandı':'Metni elle seçip kopyala');
+  };
+  $('#fs-restore').onclick = ()=>{
+    try{
+      const d=JSON.parse($('#fs-json').value);
+      if(!d || typeof d!=='object' || !Array.isArray(d.courses)) throw new Error('bad');
+      snapPush(true);                       // mevcut hâli sakla, yanlış yedekten dönülebilsin
+      localStorage.setItem(KEY, JSON.stringify(d.terms ? d : migrateV1(d)));
+      S = load();
+      save();
+      applyTheme(); closeSheet(); renderAll(); toast('Geri yüklendi');
+    }catch(e){ toast('Yedek metni okunamadı'); }
+  };
+  resetBtn.onclick = ()=>{
+    try{
+      localStorage.removeItem(KEY);
+      localStorage.removeItem(KEY1);
+      localStorage.removeItem(SNAP_KEY);
+    }catch(e){}
+    idbSet(null);
+    S = blank(); unlocked = true;
+    applyTheme(); closeSheet(); renderAll(); renderStorageWarn();
+    toast('Her şey silindi');
+  };
+}
+
+/* otomatik yedek listesi */
+function fmtSnapWhen(ts){
+  const d = new Date(ts), n = new Date();
+  const gun = 86400000;
+  const d0 = new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime();
+  const n0 = new Date(n.getFullYear(),n.getMonth(),n.getDate()).getTime();
+  const fark = Math.round((n0-d0)/gun);
+  const saat = d.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
+  if(fark===0) return 'Bugün '+saat;
+  if(fark===1) return 'Dün '+saat;
+  return d.toLocaleDateString('tr-TR',{day:'numeric',month:'long'})+' '+saat;
+}
+function renderSnapList(){
+  const box = $('#fs-snaps'); if(!box) return;
+  const list = snapList().slice().reverse();
+  box.innerHTML = list.length
+    ? list.map(s=>{
+        let n = 0;
+        try{ n = (JSON.parse(s.json).courses||[]).length; }catch(e){}
+        return '<div class="snap-row">'+
+          '<span class="snap-when">'+esc(fmtSnapWhen(s.at))+'</span>'+
+          '<span class="snap-size">'+n+' ders</span>'+
+          '<button class="chip tone-accent" data-snap="'+s.at+'">Geri dön</button>'+
+        '</div>';
+      }).join('')
+    : '<div class="empty empty-flat"><div class="empty-p">Henüz otomatik yedek yok. '+
+      'Veri girdikçe burada birikir.</div></div>';
+
+  $$('[data-snap]', box).forEach(b=>{
+    b.onclick = ()=>{
+      if(!b.dataset.sure){ b.dataset.sure='1'; b.textContent='Emin misin?'; return; }
+      const at = Number(b.dataset.snap);
+      if(snapRestore(at)){ closeSheet(); toast('Yedek geri yüklendi'); }
+      else toast('Bu yedek okunamadı');
+    };
+  });
+}
+
+/* ============================================================
+   olaylar
+   ============================================================ */
+$('#veil').onclick = closeSheet;
+
+document.addEventListener('click', e=>{
+  const tab = e.target.closest('[data-tab]');
+  if(tab){ go(tab.dataset.tab); return; }
+
+  const goto = e.target.closest('[data-goto]');
+  if(goto){ go(goto.dataset.goto); return; }
+
+  const sw = e.target.closest('[data-switch-term]');
+  if(sw){
+    S.activeTerm = sw.dataset.switchTerm; save(); closeSheet(); renderAll();
+    toast(termLabel(activeTerm())+' dönemine geçildi');
+    return;
+  }
+  const etm = e.target.closest('[data-edit-term]');
+  if(etm){ sheetTerm(etm.dataset.editTerm); return; }
+
+  const day = e.target.closest('[data-day]');
+  if(day){ ui.day = +day.dataset.day; renderProgram(); return; }
+
+  const mark = e.target.closest('[data-mark]');
+  if(mark){
+    const k = mark.dataset.sid+'__'+isoToday();
+    if(S.marks[k]===mark.dataset.mark) delete S.marks[k];
+    else S.marks[k]=mark.dataset.mark;
+    save(); renderToday(); renderDurum();
+    return;
+  }
+
+  const tog = e.target.closest('[data-toggle]');
+  if(tog){
+    const t=S.tasks.find(x=>x.id===tog.dataset.toggle);
+    if(t){ t.done=!t.done; save(); renderTasks(); renderToday(); }
+    return;
+  }
+
+  const et = e.target.closest('[data-edit-task]');
+  if(et){ sheetTask(et.dataset.editTask); return; }
+
+  const es = e.target.closest('[data-edit-sess]');
+  if(es){ sheetCourse(es.dataset.editSess); return; }
+
+  const eg = e.target.closest('[data-edit-grade]');
+  if(eg){ sheetGradeCourse(eg.dataset.editGrade); return; }
+
+  const st = e.target.closest('[data-status]');
+  if(st){ sheetStatus(st.dataset.status); return; }
+
+  const setst = e.target.closest('[data-set-status]');
+  if(setst){
+    const c = course(setst.dataset.cid);
+    if(c){
+      c.status = setst.dataset.setStatus || '';
+      save(); closeSheet(); renderDurum();
+      toast(c.status ? c.status+' olarak işaretlendi' : 'Sayısal nota dönüldü');
+    }
+    return;
+  }
+
+  const f = e.target.closest('[data-filter]');
+  if(f){
+    ui.filter=f.dataset.filter;
+    $$('[data-filter]').forEach(x=>x.classList.remove('is-on'));
+    f.classList.add('is-on');
+    renderTasks();
+    return;
+  }
+});
+
+/* AKTS ve not alanları yazıldıkça hesaplanır — odak kaybolmasın diye
+   yalnızca rozet ve ortalamalar tazelenir, liste yeniden çizilmez */
+document.addEventListener('input', e=>{
+  const sc = e.target.closest('[data-score]');
+  const cr = sc ? null : e.target.closest('[data-credit]');
+  if(!sc && !cr) return;
+  const c = course(sc ? sc.dataset.score : cr.dataset.credit);
+  if(!c) return;
+  if(sc) c.score = sc.value; else c.credit = cr.value;
+  save();
+  refreshBadge(c);
+  renderGpaHeader();
+  renderTermList();
+});
+
+$('#btn-term').onclick        = sheetTerms;
+$('#btn-new-term').onclick    = ()=> sheetTerm();
+$('#btn-settings').onclick    = openSettings;
+$('#btn-abs-settings').onclick= ()=> sheetTerm(S.activeTerm);
+$('#btn-add-ders').onclick    = ()=> sheetCourse();
+$('#btn-add-odev').onclick    = ()=> sheetTask();
+$('#btn-add-grade').onclick   = ()=> sheetGradeCourse();
+$('#mode-gun').onclick = ()=>{
+  ui.mode='gun';
+  $('#mode-gun').classList.add('is-on'); $('#mode-hafta').classList.remove('is-on');
+  $('#pane-gun').style.display=''; $('#pane-hafta').style.display='none';
+};
+$('#mode-hafta').onclick = ()=>{
+  ui.mode='hafta';
+  $('#mode-hafta').classList.add('is-on'); $('#mode-gun').classList.remove('is-on');
+  $('#pane-hafta').style.display=''; $('#pane-gun').style.display='none';
+  renderWeekGrid();
+};
+
+function go(tab){
+  ui.tab=tab;
+  $$('.view').forEach(v=>v.classList.remove('is-active'));
+  $('#view-'+tab).classList.add('is-active');
+  $$('.tab').forEach(t=>t.classList.toggle('is-on', t.dataset.tab===tab));
+  window.scrollTo(0,0);
+  renderAll();
+}
+
+function renderAll(){
+  renderTop(); renderToday(); renderProgram(); renderTasks(); renderDurum();
+}
+
+/* ============================================================
+   başlat
+   ============================================================ */
+ui.day = todayIdx();
+applyTheme();
+health.ls = lsWorks();
+renderAll();
+renderStorageWarn();
+hydrate();      // IndexedDB'yi devreye al, gerekirse oradan kurtar
+askPersist();   // tarayıcıdan veriyi silmeme sözü iste
+
+/* web adresinden açıldıysa çevrimdışı çalışma için servis çalışanı; sw.js yayın betiğince üretilir */
+if(ENV.web && 'serviceWorker' in navigator){
+  try{ navigator.serviceWorker.register('sw.js').catch(()=>{}); }catch(e){}
+}
+
+/* localStorage yazılabiliyorsa yedek depo da baştan doldurulsun */
+setInterval(()=>{ if(ui.tab==='bugun') renderToday(); }, 30000);
+
+document.addEventListener('visibilitychange', ()=>{
+  if(document.hidden){
+    if(!isEmpty()) save();            // arka plana atılmadan önce son bir kez yaz
+  } else {
+    health.ls = lsWorks();
+    renderAll();
+    renderStorageWarn();
+  }
+});
+window.addEventListener('pagehide', ()=>{ if(!isEmpty()) save(); });
+</script>
+
+</body>
+</html>
