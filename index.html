@@ -426,51 +426,56 @@ button{cursor:pointer;background:none;border:none;padding:0}
 .day-pill.is-today:not(.is-on){border-color:var(--accent);color:var(--accent)}
 
 /* ============================================================
-   haftalık ızgara
+   haftalık çizelge — klasik tablo: satırlar saat, sütunlar gün
    ============================================================ */
-.gridwrap{
-  overflow-x:auto;-webkit-overflow-scrolling:touch;
+.tt-wrap{
   border:1px solid var(--line);border-radius:var(--r-md);
-  background:var(--surface);box-shadow:var(--shadow-1);
+  background:var(--surface);box-shadow:var(--shadow-1);overflow:hidden;
 }
-.grid{display:flex;min-width:max-content;position:relative}
-.grid-hours{
-  flex:none;width:44px;position:sticky;left:0;z-index:2;
-  background:var(--surface);border-right:1px solid var(--line);
-}
-.grid-col{flex:none;width:108px;border-right:1px solid var(--line-soft)}
-.grid-col:last-child{border-right:none}
-.grid-head{
-  height:32px;display:grid;place-items:center;
+.tt{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed}
+.tt th{
   font-family:var(--font-display);font-size:11px;font-weight:600;
-  letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);
-  border-bottom:1px solid var(--line);
-  position:sticky;top:0;background:var(--surface);z-index:1;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);
+  padding:8px 2px;background:var(--surface-2);
+  border-bottom:1px solid var(--line);border-right:1px solid var(--line-soft);
 }
-.grid-head.is-today{color:var(--accent)}
-.grid-body{position:relative}
-.grid-hour{
-  height:56px;border-bottom:1px solid var(--line-soft);
+.tt th:last-child{border-right:none}
+.tt th.is-today{background:var(--accent-soft);color:var(--accent-2)}
+.tt th.tt-time,.tt td.tt-time{width:46px}
+.tt td{
+  border-bottom:1px solid var(--line-soft);border-right:1px solid var(--line-soft);
+  padding:2px;vertical-align:top;height:54px;
+}
+.tt td:last-child{border-right:none}
+.tt tr:last-child td{border-bottom:none}
+.tt td.tt-time{
   font-family:var(--font-mono);font-size:10.5px;color:var(--ink-3);
-  padding:3px 5px 0 0;text-align:right;font-variant-numeric:tabular-nums;
-}
-.grid-line{height:56px;border-bottom:1px solid var(--line-soft)}
-.gblock{
-  position:absolute;left:4px;right:4px;
-  border-radius:9px;padding:5px 6px;overflow:hidden;
-  background:var(--cbg);color:var(--cfg);
-  border-left:3px solid var(--cfg);
-  text-align:left;
-}
-.gblock b{
-  display:block;font-family:var(--font-display);
-  font-size:11.5px;font-weight:600;line-height:1.2;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-}
-.gblock span{
-  display:block;font-family:var(--font-mono);font-size:9.5px;opacity:.85;
+  text-align:center;padding-top:6px;background:var(--surface-2);
   font-variant-numeric:tabular-nums;
 }
+.tt td.is-today{background:var(--accent-soft)}
+@supports (background:color-mix(in srgb,red 50%,blue)){
+  .tt td.is-today{background:color-mix(in srgb,var(--accent-soft) 45%,var(--surface))}
+}
+.tt-cell{
+  display:flex;flex-direction:column;justify-content:center;gap:2px;
+  width:100%;border-radius:7px;padding:4px 4px 4px 5px;
+  background:var(--cbg);color:var(--cfg);
+  border-left:3px solid var(--cfg);text-align:left;
+  transition:transform .12s ease;
+}
+.tt-cell:active{transform:scale(.96)}
+.tt-cell + .tt-cell{margin-top:2px}
+.tt-cell b{
+  font-family:var(--font-display);font-size:11px;font-weight:600;line-height:1.2;
+  overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;
+  word-break:break-word;
+}
+.tt-cell span{
+  font-family:var(--font-mono);font-size:9.5px;opacity:.85;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.tt-hint{font-size:11.5px;color:var(--ink-3);text-align:center;margin-top:8px}
 
 /* ============================================================
    ödev satırı
@@ -1958,34 +1963,77 @@ function renderWeekGrid(){
   const el = $('#week-grid');
   const all = [0,1,2,3,4,5,6].reduce((a,d)=>a.concat(sessionsOf(d)),[]);
   if(!all.length){
-    el.innerHTML='<div class="empty"><div class="empty-p">Ders eklendikçe haftalık tablo burada oluşur.</div></div>';
+    el.innerHTML='<div class="empty"><div class="empty-p">Ders eklendikçe haftalık çizelge burada oluşur.</div></div>';
     return;
   }
   const dayIdx = all.some(s=>s.day>4) ? [0,1,2,3,4,5,6] : [0,1,2,3,4];
+  const td = todayIdx();
+  const ROW = 54;                                    // satır yüksekliği (px), CSS ile aynı
+
+  /* saat dilimleri: derslerin en sık başladığı dakikaya hizalı, 60 dakikalık satırlar */
+  const cnt = {};
+  all.forEach(s=>{ const m=toMin(s.start)%60; cnt[m]=(cnt[m]||0)+1; });
+  const origin = +Object.keys(cnt).sort((a,b)=> cnt[b]-cnt[a] || a-b)[0];
   let lo=24*60, hi=0;
   all.forEach(s=>{ lo=Math.min(lo,toMin(s.start)); hi=Math.max(hi,toMin(s.end)); });
-  const h0=Math.floor(lo/60), h1=Math.ceil(hi/60), rows=Math.max(1,h1-h0), PX=56, td=todayIdx();
+  const r0 = Math.floor((lo-origin)/60);
+  const r1 = Math.max(r0+1, Math.ceil((hi-origin)/60));
+  const rows = r1-r0;
 
-  let hours='<div class="grid-head"></div>';
-  for(let h=h0; h<h1; h++) hours += '<div class="grid-hour">'+String(h).padStart(2,'0')+'</div>';
+  /* hücre yerleşimi: her ders başladığı satıra girer, süresi kadar satır kaplar (rowspan);
+     çakışan dersler aynı hücrede alt alta listelenir */
+  const cells = {}, cover = {};
+  dayIdx.forEach(d=>{
+    sessionsOf(d).forEach(s=>{
+      const a = Math.floor((toMin(s.start)-origin)/60) - r0;
+      const b = Math.max(a+1, Math.ceil((toMin(s.end)-origin)/60) - r0);
+      const owner = cover[d+':'+a];
+      if(owner!=null){
+        const cell = cells[d+':'+owner];
+        cell.list.push(s);
+        const need = b-owner;
+        if(need>cell.span){
+          for(let r=owner+cell.span; r<b; r++) cover[d+':'+r]=owner;
+          cell.span = need;
+        }
+      } else {
+        cells[d+':'+a] = {list:[s], span:b-a};
+        for(let r=a; r<b; r++) cover[d+':'+r]=a;
+      }
+    });
+  });
 
-  const cols = dayIdx.map(d=>{
-    let lines='';
-    for(let h=h0; h<h1; h++) lines += '<div class="grid-line"></div>';
-    const blocks = sessionsOf(d).map(s=>{
-      const c=course(s.courseId)||{};
-      const top=(toMin(s.start)-h0*60)/60*PX;
-      const hgt=Math.max(24,(toMin(s.end)-toMin(s.start))/60*PX-3);
-      return '<button class="gblock" style="'+cvar(c)+';top:'+top+'px;height:'+hgt+'px" data-edit-sess="'+s.id+'">'+
-        '<b>'+esc(c.name||'Ders')+'</b><span>'+esc(s.start)+'</span></button>';
-    }).join('');
-    return '<div class="grid-col">'+
-      '<div class="grid-head'+(d===td?' is-today':'')+'">'+DAYS_S[d]+'</div>'+
-      '<div class="grid-body" style="height:'+(rows*PX)+'px">'+lines+blocks+'</div>'+
-    '</div>';
-  }).join('');
+  const hhmm = m=> String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
+  let html = '<div class="tt-wrap"><table class="tt"><thead><tr><th class="tt-time"></th>'+
+    dayIdx.map(d=>'<th'+(d===td?' class="is-today"':'')+'>'+DAYS_S[d]+'</th>').join('')+
+    '</tr></thead><tbody>';
 
-  el.innerHTML = '<div class="gridwrap"><div class="grid"><div class="grid-hours">'+hours+'</div>'+cols+'</div></div>';
+  for(let r=0; r<rows; r++){
+    html += '<tr><td class="tt-time">'+hhmm(origin+(r0+r)*60)+'</td>';
+    dayIdx.forEach(d=>{
+      const own = cover[d+':'+r];
+      if(own!=null && own!==r) return;                       // üstteki hücre kaplıyor
+      const cell = cells[d+':'+r];
+      const cls = d===td ? ' class="is-today"' : '';
+      if(!cell){ html += '<td'+cls+'></td>'; return; }
+      const k = cell.list.length;
+      const each = Math.max(30, Math.floor((cell.span*ROW - 4 - (k-1)*2)/k));
+      html += '<td'+cls+(cell.span>1?' rowspan="'+cell.span+'"':'')+'>'+
+        cell.list.map(s=>{
+          const c = course(s.courseId)||{};
+          return '<button class="tt-cell" style="'+cvar(c)+';height:'+each+'px" data-edit-sess="'+s.id+'" '+
+            'aria-label="'+esc(c.name||'Ders')+' '+esc(s.start)+'–'+esc(s.end)+'">'+
+            '<b>'+esc(c.code||c.name||'Ders')+'</b>'+
+            (s.room ? '<span>'+esc(s.room)+'</span>' : '<span>'+esc(s.start)+'</span>')+
+          '</button>';
+        }).join('')+
+      '</td>';
+    });
+    html += '</tr>';
+  }
+  html += '</tbody></table></div>'+
+    '<div class="tt-hint">Bir hücreye dokununca o ders saati düzenlenir.</div>';
+  el.innerHTML = html;
 }
 
 /* ============================================================
@@ -2986,15 +3034,18 @@ $('#btn-add-odev').onclick    = ()=> sheetTask();
 $('#btn-add-grade').onclick   = ()=> sheetGradeCourse();
 $('#mode-gun').onclick = ()=>{
   ui.mode='gun';
+  if(S.settings.programMode!=='gun'){ S.settings.programMode='gun'; save(); }
   $('#mode-gun').classList.add('is-on'); $('#mode-hafta').classList.remove('is-on');
   $('#pane-gun').style.display=''; $('#pane-hafta').style.display='none';
 };
 $('#mode-hafta').onclick = ()=>{
   ui.mode='hafta';
+  if(S.settings.programMode!=='hafta'){ S.settings.programMode='hafta'; save(); }
   $('#mode-hafta').classList.add('is-on'); $('#mode-gun').classList.remove('is-on');
   $('#pane-hafta').style.display=''; $('#pane-gun').style.display='none';
   renderWeekGrid();
 };
+if(S.settings.programMode==='hafta') $('#mode-hafta').click();   // son seçilen görünümle aç
 
 function go(tab){
   ui.tab=tab;
