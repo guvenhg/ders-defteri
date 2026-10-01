@@ -1,5 +1,5 @@
 /* Ders Defteri — servis çalışanı (yayina-hazirla.ps1 üretir) */
-const V = 'ders-defteri-20261001-220645';
+const V = 'ders-defteri-20261001-221342';
 const FILES = ['./index.html', './icon.png', './manifest.webmanifest'];
 
 self.addEventListener('install', e => {
@@ -22,8 +22,14 @@ self.addEventListener('fetch', e => {
   try { url = new URL(e.request.url); } catch (err) { return; }
   if (url.origin !== self.location.origin) return;
 
+  // Sayfanın kendisi her açılışta sunucuyla doğrulanır: GitHub Pages 10 dakikalık
+  // tarayıcı önbelleği verdiği için aksi halde yeni yayın telefona geç ulaşır.
+  const req = e.request.mode === 'navigate'
+    ? new Request(e.request.url, { cache: 'no-cache', credentials: 'same-origin' })
+    : e.request;
+
   e.respondWith(
-    fetch(e.request).then(r => {
+    fetch(req).then(r => {
       if (r && r.ok) {
         const copy = r.clone();
         caches.open(V).then(c => c.put(e.request, copy)).catch(() => {});

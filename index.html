@@ -1388,6 +1388,8 @@ const PASS_GPA  = 2.00;   // altında başarısız sayılır
 const RETRY_GPA = 1.70;   // altında ders tekrarı gündeme gelir
 const HONOR     = 3.00;   // yarıyıl onur öğrencisi
 const HIGH_HONOR= 3.50;   // yarıyıl yüksek onur öğrencisi
+const APP_VERSION = '01.10.2026 22:13';   // yayın betiği bu satırı yayın tarihiyle değiştirir
+let pendingReload = false;          // yeni sürüm geldi ama form açıktı: kapanınca yenile
 const KEY  = 'ders-defteri-v2';
 const KEY1 = 'ders-defteri-v1';
 
@@ -2616,6 +2618,7 @@ function closeSheet(){
   $('#sheet').classList.remove('is-open');
   $('#veil').classList.remove('is-open');
   document.body.style.overflow='';
+  if(pendingReload){ pendingReload = false; setTimeout(()=> location.reload(), 400); }
 }
 
 /* --- dönem ekle / düzenle --- */
@@ -2748,11 +2751,12 @@ function sheetCourse(sessId){
           '<div class="field"><label class="label" for="fc-teacher">Hoca</label>'+
           '<input class="input" id="fc-teacher" placeholder="Dr. Yılmaz" value="'+esc(c.teacher||'')+'"></div>'+
         '</div>'+
-        '<div class="field"><label class="label" for="fc-attend">Devam zorunluluğu % — dersin geneli</label>'+
+        '<div class="field"><label class="label" for="fc-attend">Dersin genel devam zorunluluğu %</label>'+
         '<input class="input" id="fc-attend" type="number" min="0" max="99" inputmode="numeric" '+
           'placeholder="'+(100-(activeTerm().rate||30))+' — dönem ayarı" '+
           'value="'+(hasOwnRate(c) ? (100-Number(c.rate)) : '')+'">'+
-        '<div class="note" style="margin-top:6px">Bu derste oran farklıysa yaz; boş bırakırsan dönem ayarı geçerli olur.</div></div>'+
+        '<div class="note" style="margin-top:6px"><b>Dersin bütün gün ve saatlerine</b> uygulanır. Boş bırakırsan dönem ayarı geçerli olur. '+
+        'Tek bir saatin oranı farklıysa burayı değil, aşağıdaki alanı kullan.</div></div>'+
         '<div class="field"><span class="label">Renk</span>'+
         '<div class="swatches" id="fc-colors">'+
           COLORS.map((n,i)=>'<button type="button" class="swatch'+(((c.color||0)===i)?' is-on':'')+'" '+
@@ -2774,11 +2778,11 @@ function sheetCourse(sessId){
       '</div>'+
       '<div class="field"><label class="label" for="fc-room">Derslik</label>'+
       '<input class="input" id="fc-room" placeholder="B-204" value="'+esc(sess?(sess.room||''):'')+'"></div>'+
-      '<div class="field"><label class="label" for="fc-srate">Bu saate özel devam % — isteğe bağlı</label>'+
+      '<div class="field"><label class="label" for="fc-srate">Yalnızca bu gün ve saat için devam %</label>'+
       '<input class="input" id="fc-srate" type="number" min="0" max="99" inputmode="numeric" '+
         'placeholder="Dersin oranıyla aynı" value="'+((sess && hasOwnRate(sess)) ? (100-Number(sess.rate)) : '')+'">'+
-      '<div class="note" style="margin-top:6px">Uygulama ya da laboratuvar saatinin oranı dersin genelinden farklıysa doldur; '+
-      'o saatin devamsızlığı ayrı izlenir.</div></div>'+
+      '<div class="note" style="margin-top:6px"><b>Yalnızca yukarıda seçili gün ve saate</b> uygulanır. Uygulama ya da laboratuvar saatinin '+
+      'oranı dersin genelinden farklıysa buraya yaz; o saatin devamsızlığı Durum sekmesinde ayrı satırda izlenir.</div></div>'+
 
       '<div class="sheet-actions">'+
         '<button type="button" class="btn btn-ghost" id="fc-cancel">Vazgeç</button>'+
@@ -3358,6 +3362,7 @@ function diagRow(label, ok, okText, badText){
 }
 function storageReport(){
   return '<div class="diag-box">'+
+    '<div class="diag"><span>Sürüm</span><span class="chip">'+esc(APP_VERSION)+'</span></div>'+
     '<div class="diag"><span>Açılış biçimi</span><span class="chip '+
       (ENV.isFile ? 'tone-alert' : (ENV.standalone ? 'tone-ok' : ''))+'">'+
       (ENV.isFile ? 'dosya — kayıt tutulmaz' : (ENV.standalone ? 'ana ekran uygulaması' : 'tarayıcı sekmesi'))+
@@ -3401,7 +3406,8 @@ function sheetSettings(){
     '</div>'+
 
     '<div class="divider"></div>'+
-    '<div class="field"><span class="label">Depolama durumu</span>'+ storageReport() +'</div>'+
+    '<div class="field"><span class="label">Depolama durumu</span>'+ storageReport() +
+      '<button type="button" class="btn btn-ghost btn-wide" id="fs-update" style="margin-top:10px">Güncellemeleri denetle</button></div>'+
 
     '<div class="divider"></div>'+
     '<div class="field"><span class="label">Otomatik yedekler</span>'+
@@ -3450,6 +3456,15 @@ function sheetSettings(){
     S.settings.theme=b.dataset.theme; save(); applyTheme();
     $$('.seg-btn',$('#fs-theme')).forEach(x=>x.classList.remove('is-on'));
     b.classList.add('is-on');
+  };
+  $('#fs-update').onclick = ()=>{
+    toast('Güncelleme denetleniyor…', 3000);
+    const again = ()=> setTimeout(()=> location.reload(), 900);
+    try{
+      if('serviceWorker' in navigator){
+        navigator.serviceWorker.getRegistration().then(r=> r ? r.update() : null).then(again, again);
+      } else again();
+    }catch(e){ again(); }
   };
   $('#fs-accent').onclick = e=>{
     const b=e.target.closest('[data-accent]'); if(!b) return;
@@ -3723,7 +3738,25 @@ askPersist();   // tarayıcıdan veriyi silmeme sözü iste
 
 /* web adresinden açıldıysa çevrimdışı çalışma için servis çalışanı; sw.js yayın betiğince üretilir */
 if(ENV.web && 'serviceWorker' in navigator){
-  try{ navigator.serviceWorker.register('sw.js').catch(()=>{}); }catch(e){}
+  try{
+    const hadCtl = !!navigator.serviceWorker.controller;
+    let swReg = null;
+    navigator.serviceWorker.register('sw.js').then(r=>{ swReg = r; }).catch(()=>{});
+
+    /* yeni sürüm devreye girince sayfayı tazele; form açıksa kullanıcıyı bölme */
+    navigator.serviceWorker.addEventListener('controllerchange', ()=>{
+      if(!hadCtl) return;                                  // ilk kurulum
+      if($('#sheet').classList.contains('is-open')){
+        pendingReload = true;
+        toast('Yeni sürüm hazır — bu ekran kapanınca yenilenecek', 4000);
+      } else location.reload();
+    });
+
+    /* iPhone uygulamayı bellekte tutar: öne her gelişte yeni sürüm var mı diye bak */
+    document.addEventListener('visibilitychange', ()=>{
+      if(!document.hidden && swReg){ try{ swReg.update().catch(()=>{}); }catch(e){} }
+    });
+  }catch(e){}
 }
 
 /* localStorage yazılabiliyorsa yedek depo da baştan doldurulsun */
