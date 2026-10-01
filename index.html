@@ -505,6 +505,39 @@ button{cursor:pointer;background:none;border:none;padding:0}
 }
 .abs th.c-hrs{font-family:var(--font-display)}
 .abs th.c-time{font-family:var(--font-display);font-size:10.5px;color:var(--ink-3)}
+
+/* ============================================================
+   not satırı: silme düğmesi + sınav ayrıntısı (vize / final)
+   ============================================================ */
+.row-del{
+  flex:none;min-width:30px;height:30px;border-radius:9px;
+  display:grid;place-items:center;color:var(--ink-3);
+  border:1px solid var(--line);background:var(--surface-2);
+  font-family:var(--font-display);font-size:11.5px;font-weight:600;
+  transition:transform .12s ease;
+}
+.row-del:active{transform:scale(.92)}
+.row-del svg{width:15px;height:15px}
+.row-del.is-sure{padding:0 10px;background:var(--alert-soft);color:var(--alert);border-color:transparent}
+.parts-line{
+  display:flex;flex-wrap:wrap;gap:5px 6px;align-items:center;
+  width:100%;text-align:left;
+}
+.parts-line .chip b{font-family:var(--font-mono);font-weight:600;margin-left:3px;font-variant-numeric:tabular-nums}
+.parts-add,.parts-edit{font-family:var(--font-display);font-size:12.5px;font-weight:600;color:var(--accent)}
+.ex-head,.ex-row{display:grid;grid-template-columns:1fr 68px 68px 34px;gap:7px;align-items:center}
+.ex-head{
+  font-family:var(--font-display);font-size:10.5px;font-weight:600;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin-bottom:6px;
+}
+.ex-head span:nth-child(2),.ex-head span:nth-child(3){text-align:center}
+.ex-row{margin-bottom:8px}
+.ex-row .input{padding:10px 9px;min-width:0}
+.ex-row .ex-w,.ex-row .ex-s{text-align:center;font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.ex-del{
+  width:34px;height:34px;border-radius:9px;color:var(--ink-3);
+  font-size:20px;line-height:1;background:var(--surface-2);border:1px solid var(--line);
+}
 .abs .chip{display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;vertical-align:middle}
 .abs tfoot td{
   background:var(--surface-2);font-family:var(--font-display);font-weight:600;
@@ -1720,6 +1753,41 @@ function gradeOf(c){
   const row = SCALE.find(r=> v>=r[0]);
   return {score:v, letter:row[1], coef:row[2]};
 }
+/* --- sınav ayrıntısı: c.parts = [{id, name, weight, score}] ---
+   Parçalar varsa dersin notu ağırlıklı toplamdan hesaplanıp c.score'a yazılır;
+   ağırlıklar %100 etmeden ya da eksik not varken ders ortalamaya katılmaz. */
+function partsInfo(parts){
+  const list = Array.isArray(parts) ? parts : [];
+  let wsum=0, got=0, gotW=0;
+  const missing=[];
+  list.forEach(p=>{
+    const w = Math.max(0, Number(p.weight)||0);
+    wsum += w;
+    const has = !(p.score===''||p.score==null) && isFinite(Number(p.score));
+    if(has){ const v=Math.max(0,Math.min(100,Number(p.score))); got += v*w/100; gotW += w; }
+    else missing.push(p);
+  });
+  const wOK  = Math.abs(wsum-100)<0.01;
+  const done = list.length>0 && wOK && missing.length===0;
+  return {count:list.length, wsum, wOK, got, gotW, missing, done,
+          total:   done ? Math.round(got) : null,
+          partial: gotW>0 ? got/gotW*100 : null};
+}
+function hasParts(c){ return !!(c && Array.isArray(c.parts) && c.parts.length); }
+function syncScore(c){
+  if(!hasParts(c)) return;
+  const inf = partsInfo(c.parts);
+  c.score = inf.done ? inf.total : '';
+}
+function fmtNum(v){ return String(Math.round(v*10)/10).replace('.',','); }
+const PART_PRESETS = {
+  v1: [['Vize',40],['Final',60]],
+  v2: [['Vize 1',30],['Vize 2',30],['Final',40]]
+};
+const TRASH_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" '+
+  'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>';
+
 function gradeTone(g){
   if(!g || g.coef==null) return '';   // ortalamaya girmiyor → nötr
   if(g.coef>=2) return 'tone-ok';     // geçti
@@ -2190,12 +2258,14 @@ function renderGradeList(){
   const mine = termCourses();
   $('#grade-eyebrow').textContent = termLabel(activeTerm())+' notları';
   $('#grade-list').innerHTML = mine.length
-    ? mine.map(c=>
-        '<div class="grade-row">'+
+    ? mine.map(c=>{
+        const hp = hasParts(c);
+        return '<div class="grade-row">'+
           '<div class="grade-head">'+
             '<button class="chip tone-course" style="'+cvar(c)+'" data-edit-grade="'+c.id+'">'+
               esc((c.code||c.name||'?').slice(0,8))+'</button>'+
             '<button class="grade-name" data-edit-grade="'+c.id+'">'+esc(c.name)+'</button>'+
+            '<button class="row-del" data-del-course="'+c.id+'" aria-label="'+esc(c.name)+' dersini sil">'+TRASH_SVG+'</button>'+
           '</div>'+
           '<div class="grade-fields">'+
             '<label class="field-mini"><span>AKTS</span>'+
@@ -2205,11 +2275,19 @@ function renderGradeList(){
             '<label class="field-mini"><span>Not</span>'+
               '<input class="mini-input" type="number" min="0" max="100" step="1" inputmode="numeric" '+
               'value="'+(c.status?'':esc(c.score==null?'':c.score))+'" placeholder="—" data-score="'+c.id+'" '+
-              (c.status?'disabled ':'')+
+              ((c.status||hp)?'disabled ':'')+
               'aria-label="'+esc(c.name)+' notu, 100 üzerinden"></label>'+
             badgeHTML(c)+
           '</div>'+
-        '</div>').join('')
+          '<button class="parts-line" data-exams="'+c.id+'">'+
+            (hp
+              ? c.parts.map(p=>'<span class="chip">'+esc(p.name||'Sınav')+':'+
+                  '<b>'+((p.score===''||p.score==null)?'—':esc(p.score))+'</b></span>').join('')+
+                '<span class="parts-edit">Düzenle</span>'
+              : '<span class="parts-add">+ Vize / final notlarını gir</span>')+
+          '</button>'+
+        '</div>';
+      }).join('')
     : '<div class="empty empty-flat"><div class="empty-p">Bu dönemde ders yok. '+
       'Programlı ders için Program sekmesini, sadece notu tutulacak dersler için alttaki düğmeyi kullan.</div></div>';
 
@@ -2602,7 +2680,7 @@ function sheetGradeCourse(id){
       '</div>'+
       '<div class="field"><label class="label" for="fg-score">Not — 100 üzerinden</label>'+
       '<input class="input" id="fg-score" type="number" min="0" max="100" inputmode="numeric" '+
-      'placeholder="Henüz belli değil" value="'+esc(c.score==null?'':c.score)+'"></div>'+
+      'placeholder="Henüz belli değil" value="'+esc(c.score==null?'':c.score)+'"'+(hasParts(c)?' disabled':'')+'></div>'+
       '<div class="note" id="fg-preview" style="margin-bottom:13px"></div>'+
       '<div class="field"><span class="label">Renk</span>'+
       '<div class="swatches" id="fg-colors">'+
@@ -2646,12 +2724,149 @@ function sheetGradeCourse(id){
     e.preventDefault();
     const data = {
       name:$('#fg-name').value.trim(), code:$('#fg-code').value.trim(),
-      credit:$('#fg-credit').value, score:scoreEl.value, color:color
+      credit:$('#fg-credit').value, score:(hasParts(c) ? c.score : scoreEl.value), color:color
     };
     if(id) Object.assign(course(id), data);
     else S.courses.push(Object.assign({id:uid(), termId:S.activeTerm, teacher:''}, data));
     save(); closeSheet(); renderAll(); toast(id?'Güncellendi':'Ders eklendi');
   };
+}
+
+/* --- sınav ayrıntısı: vize, final ve diğerleri; sayı ve ağırlık derse göre değişir --- */
+function sheetExams(cid){
+  const c = course(cid); if(!c) return;
+  let parts = (Array.isArray(c.parts)?c.parts:[]).map(p=>(
+    {id:p.id||uid(), name:p.name||'', weight:p.weight==null?'':p.weight, score:p.score==null?'':p.score}));
+
+  openSheet(
+    '<h2 class="sheet-h">'+esc(c.name)+'</h2>'+
+    '<div class="field"><span class="label">Hazır düzen</span><div class="seg" id="ex-presets">'+
+      '<button type="button" class="seg-btn" data-preset="v1">1 vize + final</button>'+
+      '<button type="button" class="seg-btn" data-preset="v2">2 vize + final</button>'+
+    '</div></div>'+
+    '<div class="ex-head"><span>Sınav</span><span>Ağırlık %</span><span>Not</span><span></span></div>'+
+    '<div id="ex-list"></div>'+
+    '<button type="button" class="btn btn-ghost btn-wide" id="ex-add">+ Sınav ekle</button>'+
+    '<div class="note" id="ex-sum" style="margin-top:12px"></div>'+
+    '<div class="sheet-actions">'+
+      '<button type="button" class="btn btn-ghost" id="ex-cancel">Vazgeç</button>'+
+      '<button type="button" class="btn" id="ex-save">Kaydet</button>'+
+    '</div>'+
+    (hasParts(c) ? '<button type="button" class="btn btn-ghost btn-wide" id="ex-clear" style="margin-top:10px">'+
+      'Sınav ayrıntısını kaldır, tek not gir</button>' : '')
+  );
+
+  const listEl = $('#ex-list');
+  function drawList(){
+    listEl.innerHTML = parts.length
+      ? parts.map(p=>
+          '<div class="ex-row" data-pid="'+p.id+'">'+
+            '<input class="input ex-name" value="'+esc(p.name)+'" placeholder="Vize" aria-label="Sınav adı">'+
+            '<input class="input ex-w" type="number" min="0" max="100" inputmode="decimal" '+
+              'value="'+esc(p.weight)+'" placeholder="%" aria-label="Ağırlık yüzdesi">'+
+            '<input class="input ex-s" type="number" min="0" max="100" inputmode="decimal" '+
+              'value="'+esc(p.score)+'" placeholder="—" aria-label="Not, 100 üzerinden">'+
+            '<button type="button" class="ex-del" aria-label="Sınavı kaldır">×</button>'+
+          '</div>').join('')
+      : '<div class="empty empty-flat"><div class="empty-p">Henüz sınav yok. Yukarıdan hazır bir düzen seç ya da tek tek ekle.</div></div>';
+  }
+  function drawSum(){
+    const inf = partsInfo(parts), el = $('#ex-sum');
+    if(!inf.count){
+      el.innerHTML = 'Sınavları ve ağırlıklarını gir; dönem notu kendiliğinden hesaplanır. '+
+        'Ağırlıklar dersten derse değişir, ders izlencesindeki yüzdeleri yaz.';
+      return;
+    }
+    let h = inf.wOK
+      ? 'Ağırlık toplamı <b>%100</b>.'
+      : '<span style="color:var(--alert)">Ağırlık toplamı <b>%'+fmtNum(inf.wsum)+'</b>; %100 olmalı.</span>';
+    if(inf.done){
+      const g = gradeOf({score:inf.total});
+      h += ' Dönem notu <b>'+inf.total+'</b>, harf <b>'+esc(g.letter)+'</b> ('+g.coef.toFixed(2)+').';
+    } else if(inf.partial!=null){
+      h += ' Girilen sınavların ortalaması <b>'+fmtNum(inf.partial)+'</b> (notun %'+fmtNum(inf.gotW)+'\'i belli).';
+      if(inf.wOK && inf.missing.length===1){
+        const m = inf.missing[0], w = Number(m.weight)||0;
+        if(w>0){
+          const need = Math.ceil((69.5-inf.got)/w*100);
+          const nm = esc(m.name||'kalan sınav');
+          h += need<=0   ? ' CC için gereken puan zaten toplandı.'
+             : need>100  ? ' CC (70) için '+nm+' tek başına yetmiyor.'
+                         : ' CC (70) için '+nm+' notu en az <b>'+need+'</b> olmalı.';
+        }
+      }
+    } else {
+      h += ' Notlar girildikçe ortalama burada görünür.';
+    }
+    el.innerHTML = h;
+  }
+  function readRows(){
+    $$('.ex-row', listEl).forEach(r=>{
+      const p = parts.find(x=>x.id===r.dataset.pid); if(!p) return;
+      p.name   = $('.ex-name',r).value;
+      p.weight = $('.ex-w',r).value;
+      p.score  = $('.ex-s',r).value;
+    });
+  }
+
+  listEl.oninput = ()=>{ readRows(); drawSum(); };
+  listEl.onclick = e=>{
+    const d = e.target.closest('.ex-del'); if(!d) return;
+    readRows();
+    const pid = d.closest('.ex-row').dataset.pid;
+    parts = parts.filter(p=>p.id!==pid);
+    drawList(); drawSum();
+  };
+  $('#ex-add').onclick = ()=>{
+    readRows();
+    const names = parts.map(p=>(p.name||'').trim().toLocaleLowerCase('tr-TR'));
+    const vize  = names.filter(x=>x.indexOf('vize')===0).length;
+    const name  = !parts.length ? 'Vize'
+                : names.indexOf('final')<0 && vize>0 ? 'Final'
+                : 'Vize '+(vize+1);
+    parts.push({id:uid(), name:name, weight:'', score:''});
+    drawList(); drawSum();
+    const rows = $$('.ex-row', listEl); const last = rows[rows.length-1];
+    if(last) $('.ex-w', last).focus();
+  };
+  $('#ex-presets').onclick = e=>{
+    const b = e.target.closest('[data-preset]'); if(!b) return;
+    readRows();
+    /* girilmiş notlar kaybolmasın: ada göre, "Vize" ve "Vize 1" birbirinin yerine geçer */
+    const old = {};
+    parts.forEach(p=>{ old[(p.name||'').trim().toLocaleLowerCase('tr-TR')] = p.score; });
+    const pick = nm=>{
+      const k = nm.toLocaleLowerCase('tr-TR');
+      if(old[k]!=null && old[k]!=='') return old[k];
+      if(k==='vize 1' && old['vize']) return old['vize'];
+      if(k==='vize'   && old['vize 1']) return old['vize 1'];
+      return '';
+    };
+    parts = PART_PRESETS[b.dataset.preset].map(x=>({id:uid(), name:x[0], weight:x[1], score:pick(x[0])}));
+    drawList(); drawSum();
+  };
+  $('#ex-cancel').onclick = closeSheet;
+  $('#ex-save').onclick = ()=>{
+    readRows();
+    const clean = parts.map((p,i)=>({
+      id:p.id, name:(p.name||'').trim() || ('Sınav '+(i+1)),
+      weight: p.weight==='' ? '' : Math.max(0, Math.min(100, Number(p.weight)||0)),
+      score:  p.score===''  ? '' : Math.max(0, Math.min(100, Number(p.score)||0))
+    }));
+    if(clean.length){ c.parts = clean; syncScore(c); }
+    else delete c.parts;
+    const inf = partsInfo(clean);
+    save(); closeSheet(); renderAll();
+    toast(clean.length && !inf.wOK ? 'Kaydedildi — ağırlıklar %100 etmiyor' : 'Sınav notları kaydedildi');
+  };
+  const clr = $('#ex-clear');
+  if(clr) clr.onclick = ()=>{
+    if(!clr.dataset.sure){ clr.dataset.sure='1'; clr.textContent='Emin misin? Tekrar bas'; return; }
+    delete c.parts;
+    save(); closeSheet(); renderAll(); toast('Tek not girişine dönüldü');
+  };
+
+  drawList(); drawSum();
 }
 
 /* --- not durumu: sayısal not ya da özel harf --- */
@@ -3111,6 +3326,26 @@ document.addEventListener('click', e=>{
   const es = e.target.closest('[data-edit-sess]');
   if(es){ sheetCourse(es.dataset.editSess); return; }
 
+  const ex = e.target.closest('[data-exams]');
+  if(ex){ sheetExams(ex.dataset.exams); return; }
+
+  /* not listesinden ders silme: iki dokunuş, silmeden önce otomatik yedek alınır */
+  const dc = e.target.closest('[data-del-course]');
+  if(dc){
+    if(!dc.dataset.sure){
+      dc.dataset.sure='1'; dc.classList.add('is-sure'); dc.textContent='Sil?';
+      toast('Silmek için tekrar dokun');
+      setTimeout(()=>{
+        if(dc.isConnected && dc.dataset.sure){
+          delete dc.dataset.sure; dc.classList.remove('is-sure'); dc.innerHTML=TRASH_SVG;
+        }
+      }, 3500);
+      return;
+    }
+    removeCourse(dc.dataset.delCourse);
+    return;
+  }
+
   const eg = e.target.closest('[data-edit-grade]');
   if(eg){ sheetGradeCourse(eg.dataset.editGrade); return; }
 
@@ -3146,7 +3381,7 @@ document.addEventListener('input', e=>{
   if(!sc && !cr) return;
   const c = course(sc ? sc.dataset.score : cr.dataset.credit);
   if(!c) return;
-  if(sc) c.score = sc.value; else c.credit = cr.value;
+  if(sc){ if(hasParts(c)) return; c.score = sc.value; } else c.credit = cr.value;
   save();
   refreshBadge(c);
   renderGpaHeader();

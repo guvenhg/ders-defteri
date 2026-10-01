@@ -1,5 +1,5 @@
 /* Ders Defteri — servis çalışanı (yayina-hazirla.ps1 üretir) */
-const V = 'ders-defteri-20261001-213702';
+const V = 'ders-defteri-20261001-214639';
 const FILES = ['./index.html', './icon.png', './manifest.webmanifest'];
 
 self.addEventListener('install', e => {
