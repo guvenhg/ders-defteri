@@ -478,6 +478,40 @@ button{cursor:pointer;background:none;border:none;padding:0}
 .tt-hint{font-size:11.5px;color:var(--ink-3);text-align:center;margin-top:8px}
 
 /* ============================================================
+   devamsızlık çizelgesi — katılmadığım derslerin tarih listesi
+   ============================================================ */
+.abs{width:100%;border-collapse:collapse;table-layout:fixed}
+.abs th{
+  font-family:var(--font-display);font-size:10.5px;font-weight:600;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);
+  text-align:left;padding:9px 8px;background:var(--surface-2);
+  border-bottom:1px solid var(--line);
+}
+.abs td{
+  padding:10px 8px;border-bottom:1px solid var(--line-soft);
+  font-size:12.5px;vertical-align:middle;
+}
+.abs tbody tr{cursor:pointer}
+.abs tbody tr:active{background:var(--accent-soft)}
+.abs .c-date{width:25%;font-family:var(--font-display);font-weight:600}
+.abs .c-date small{display:block;font-weight:500;color:var(--ink-3);font-size:11px}
+.abs .c-time{
+  width:27%;font-family:var(--font-mono);font-size:11.5px;color:var(--ink-2);
+  font-variant-numeric:tabular-nums;
+}
+.abs .c-hrs{
+  width:16%;text-align:right;font-family:var(--font-mono);font-weight:600;
+  font-variant-numeric:tabular-nums;
+}
+.abs th.c-hrs{font-family:var(--font-display)}
+.abs th.c-time{font-family:var(--font-display);font-size:10.5px;color:var(--ink-3)}
+.abs .chip{display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;vertical-align:middle}
+.abs tfoot td{
+  background:var(--surface-2);font-family:var(--font-display);font-weight:600;
+  border-top:1px solid var(--line);border-bottom:none;
+}
+
+/* ============================================================
    ödev satırı
    ============================================================ */
 .task{
@@ -1158,6 +1192,11 @@ textarea.input{min-height:90px;font-family:var(--font-mono);font-size:12px;resiz
         <button class="link-btn" id="btn-abs-settings">Sınırı ayarla</button>
       </div>
       <div class="card" id="absence-list"></div>
+      <div class="section-head" style="margin-top:8px">
+        <span class="eyebrow">Katılmadığım dersler</span>
+        <button class="link-btn" id="btn-abs-add">Devamsızlık işle</button>
+      </div>
+      <div class="card" id="absence-log"></div>
       <div class="note" id="absence-note"></div>
     </section>
   </main>
@@ -2224,7 +2263,89 @@ function renderAbsence(){
 
   $('#absence-note').textContent =
     termLabel(at)+' · '+(at.weeks||14)+' hafta, devamsızlık sınırı %'+(at.rate||30)+
-    '. Saatler Bugün sekmesindeki "Gelmedim" işaretlerinden toplanır.';
+    '. Saatler "Gelmedim" işaretlerinden toplanır; geçmiş bir günü Devamsızlık işle ile ekleyebilirsin.';
+
+  /* --- katılmadığım dersler çizelgesi --- */
+  const log = absenceLog();
+  const total = log.reduce((a,x)=>a+x.hours,0);
+  $('#absence-log').innerHTML = log.length
+    ? '<table class="abs"><thead><tr>'+
+        '<th class="c-date">Tarih</th><th>Ders</th><th class="c-time">Saat</th><th class="c-hrs">Süre</th>'+
+      '</tr></thead><tbody>'+
+      log.map(x=>{
+        const dt = parseISO(x.iso);
+        return '<tr data-ab-date="'+x.iso+'">'+
+          '<td class="c-date">'+esc(dt.toLocaleDateString('tr-TR',{day:'numeric',month:'short'}))+
+            '<small>'+DAYS[(dt.getDay()+6)%7]+'</small></td>'+
+          '<td><span class="chip tone-course" style="'+cvar(x.course)+'">'+esc(x.course.code||x.course.name||'Ders')+'</span></td>'+
+          '<td class="c-time">'+esc(x.sess.start)+'–'+esc(x.sess.end)+'</td>'+
+          '<td class="c-hrs">'+x.hours+' sa</td>'+
+        '</tr>';
+      }).join('')+
+      '</tbody><tfoot><tr><td colspan="3">Toplam · '+log.length+' ders</td><td class="c-hrs">'+total+' sa</td></tr></tfoot></table>'
+    : '<div class="empty empty-flat"><div class="empty-p">Kaydedilmiş devamsızlık yok. '+
+      'Bugün sekmesinde "Gelmedim" dediğin ya da buradan işlediğin dersler tarihleriyle listelenir.</div></div>';
+}
+
+/* aktif dönemde "gelmedim" işaretli dersler — yeniden eskiye */
+function absenceLog(){
+  const ids = termCourses().map(c=>c.id);
+  const out = [];
+  for(const k in S.marks){
+    if(S.marks[k]!=='yok') continue;
+    const p = k.split('__');
+    const s = S.sessions.find(x=>x.id===p[0]);
+    if(!s || ids.indexOf(s.courseId)<0 || !p[1]) continue;
+    out.push({key:k, iso:p[1], sess:s, course:course(s.courseId)||{}, hours:hoursOf(s)});
+  }
+  out.sort((a,b)=> a.iso<b.iso ? 1 : a.iso>b.iso ? -1 : toMin(a.sess.start)-toMin(b.sess.start));
+  return out;
+}
+
+/* geçmiş bir günün yoklamasını işle / düzelt */
+function sheetAbsence(iso){
+  const today = isoToday();
+  openSheet(
+    '<h2 class="sheet-h">Devamsızlık işle</h2>'+
+    '<div class="field"><span class="label">Tarih</span>'+
+      '<input class="input" type="date" id="ab-date" value="'+esc(iso||today)+'" max="'+today+'"></div>'+
+    '<div class="field"><span class="label" id="ab-day">O günün dersleri</span><div id="ab-list"></div></div>'+
+    '<div class="sheet-actions"><button type="button" class="btn btn-wide" id="ab-done">Tamam</button></div>'
+  );
+  const draw = ()=>{
+    const v = $('#ab-date').value;
+    const box = $('#ab-list');
+    if(!v){ box.innerHTML = '<div class="empty empty-flat"><div class="empty-p">Bir tarih seç.</div></div>'; return; }
+    if(v>today){ box.innerHTML = '<div class="empty empty-flat"><div class="empty-p">Gelecek bir güne yoklama işlenemez.</div></div>'; return; }
+    const di = (parseISO(v).getDay()+6)%7;
+    $('#ab-day').textContent = DAYS[di]+' dersleri';
+    const list = sessionsOf(di);
+    box.innerHTML = list.length
+      ? list.map(s=>{
+          const c = course(s.courseId)||{};
+          const mk = S.marks[s.id+'__'+v];
+          return '<div class="att-wrap" style="margin-bottom:9px">'+
+            slotHTML(s,c,{dim: mk==='yok'})+
+            '<div class="att">'+
+              '<button type="button" class="att-btn'+(mk==='var'?' on-yes':'')+'" data-ab="var" data-sid="'+s.id+'">Katıldım</button>'+
+              '<button type="button" class="att-btn'+(mk==='yok'?' on-no':'')+'" data-ab="yok" data-sid="'+s.id+'">Gelmedim</button>'+
+            '</div>'+
+          '</div>';
+        }).join('')
+      : '<div class="empty empty-flat"><div class="empty-p">'+DAYS[di]+' günü programda ders yok.</div></div>';
+  };
+  $('#ab-date').onchange = draw;
+  $('#ab-date').oninput  = draw;
+  $('#ab-list').onclick = e=>{
+    const b = e.target.closest('[data-ab]'); if(!b) return;
+    const v = $('#ab-date').value; if(!v || v>today) return;
+    const k = b.dataset.sid+'__'+v;
+    if(S.marks[k]===b.dataset.ab) delete S.marks[k];
+    else S.marks[k] = b.dataset.ab;
+    save(); draw(); renderAll();
+  };
+  $('#ab-done').onclick = closeSheet;
+  draw();
 }
 
 /* ============================================================
@@ -2941,6 +3062,13 @@ function sheetSchool(){
   $$('.link-row').forEach(a=> a.addEventListener('click', ()=> setTimeout(closeSheet, 150)));
 }
 $('#btn-school').onclick = sheetSchool;
+
+/* --- devamsızlık çizelgesi --- */
+$('#btn-abs-add').onclick = ()=> sheetAbsence();
+$('#absence-log').onclick = e=>{
+  const r = e.target.closest('[data-ab-date]');
+  if(r) sheetAbsence(r.dataset.abDate);
+};
 
 document.addEventListener('click', e=>{
   const tab = e.target.closest('[data-tab]');
