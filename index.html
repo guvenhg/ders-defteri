@@ -1730,10 +1730,19 @@ function absenceHours(courseId){
   }
   return n;
 }
+/* devamsızlık oranı (%): dönemde t.rate, derse özel tanım varsa c.rate.
+   Ekranda tersi gösterilir: devam zorunluluğu = 100 − devamsızlık oranı. */
+function hasOwnRate(c){
+  return !!c && c.rate!=='' && c.rate!=null && isFinite(Number(c.rate));
+}
+function absRateOf(c){
+  const t = (c && term(c.termId)) || activeTerm();
+  return hasOwnRate(c) ? Number(c.rate) : (t.rate||30);
+}
 function absenceLimit(courseId){
   const c = course(courseId);
   const t = (c && term(c.termId)) || activeTerm();
-  return Math.floor(weeklyHours(courseId) * (t.weeks||14) * (t.rate||30) / 100);
+  return Math.floor(weeklyHours(courseId) * (t.weeks||14) * absRateOf(c) / 100);
 }
 
 /* --- not / ortalama ---
@@ -2324,24 +2333,27 @@ function renderAbsence(){
         const lim  = absenceLimit(c.id);
         const pct  = lim? Math.min(100, Math.round(used/lim*100)) : 0;
         const lvl  = pct>=100?'lvl-bad' : pct>=70?'lvl-warn' : '';
-        return '<div class="meter-row">'+
+        return '<div class="meter-row" data-attend="'+c.id+'">'+
           '<div class="meter-top">'+
             '<span class="meter-name">'+esc(c.name)+'</span>'+
             '<span class="meter-num">'+used+' / '+lim+' saat</span>'+
           '</div>'+
           '<div class="meter-track"><div class="meter-fill '+lvl+'" style="width:'+pct+'%"></div></div>'+
-          '<div>'+
+          '<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">'+
             (used>lim ? '<span class="chip tone-alert">Sınır aşıldı · NA riski</span>'
              : pct>=70 ? '<span class="chip tone-warn">Sınıra yakın · '+(lim-used)+' saat kaldı</span>'
                        : '<span class="chip tone-ok">'+(lim-used)+' saat hakkın var</span>')+
+            '<button class="chip'+(hasOwnRate(c)?' tone-accent':'')+'" data-attend="'+c.id+'">'+
+              'Devam %'+(100-absRateOf(c))+(hasOwnRate(c)?' · derse özel':'')+'</button>'+
           '</div>'+
         '</div>';
       }).join('')
     : '<div class="empty empty-flat"><div class="empty-p">Programa ders eklendiğinde devamsızlık takibi burada başlar.</div></div>';
 
   $('#absence-note').textContent =
-    termLabel(at)+' · '+(at.weeks||14)+' hafta, devamsızlık sınırı %'+(at.rate||30)+
-    '. Saatler "Gelmedim" işaretlerinden toplanır; geçmiş bir günü Devamsızlık işle ile ekleyebilirsin.';
+    termLabel(at)+' · '+(at.weeks||14)+' hafta, devam zorunluluğu %'+(100-(at.rate||30))+
+    ' (dönem geneli). Oranı farklı olan derste dersin satırına dokunup değiştir. '+
+    'Saatler "Gelmedim" işaretlerinden toplanır; geçmiş bir günü Devamsızlık işle ile ekleyebilirsin.';
 
   /* --- katılmadığım dersler çizelgesi --- */
   const log = absenceLog();
@@ -2467,8 +2479,8 @@ function sheetTerm(id){
       '<div class="field-row">'+
         '<div class="field"><label class="label" for="ftm-weeks">Kaç hafta</label>'+
         '<input class="input" id="ftm-weeks" type="number" min="1" max="30" inputmode="numeric" value="'+(t?t.weeks:14)+'"></div>'+
-        '<div class="field"><label class="label" for="ftm-rate">Devamsızlık %</label>'+
-        '<input class="input" id="ftm-rate" type="number" min="1" max="100" inputmode="numeric" value="'+(t?t.rate:30)+'"></div>'+
+        '<div class="field"><label class="label" for="ftm-rate">Devam zorunluluğu %</label>'+
+        '<input class="input" id="ftm-rate" type="number" min="0" max="99" inputmode="numeric" value="'+(100-(t?(t.rate||30):30))+'"></div>'+
       '</div>'+
       '<div class="note">Hafta sayısı ve yüzde, o dönemin devamsızlık sınırını belirler. Yaz okulu gibi kısa dönemlerde hafta sayısını düşürmek yeterli.</div>'+
       '<div class="sheet-actions" style="margin-top:14px">'+
@@ -2510,7 +2522,7 @@ function sheetTerm(id){
     e.preventDefault();
     const year  = $('#ftm-year').value;
     const weeks = Math.max(1, Math.min(30, +$('#ftm-weeks').value||14));
-    const rate  = Math.max(1, Math.min(100, +$('#ftm-rate').value||30));
+    const rate  = 100 - Math.max(0, Math.min(99, Math.round(+$('#ftm-rate').value||70)));   // ekranda devam %, kayıtta devamsızlık %
     const clash = S.terms.find(x=>x.year===year && x.season===season && (!t || x.id!==t.id));
     if(clash){ toast('Bu dönem zaten var'); return; }
     if(t){ t.year=year; t.season=season; t.weeks=weeks; t.rate=rate; }
@@ -2571,6 +2583,11 @@ function sheetCourse(sessId){
           '<div class="field"><label class="label" for="fc-teacher">Hoca</label>'+
           '<input class="input" id="fc-teacher" placeholder="Dr. Yılmaz" value="'+esc(c.teacher||'')+'"></div>'+
         '</div>'+
+        '<div class="field"><label class="label" for="fc-attend">Devam zorunluluğu %</label>'+
+        '<input class="input" id="fc-attend" type="number" min="0" max="99" inputmode="numeric" '+
+          'placeholder="'+(100-(activeTerm().rate||30))+' — dönem ayarı" '+
+          'value="'+(hasOwnRate(c) ? (100-Number(c.rate)) : '')+'">'+
+        '<div class="note" style="margin-top:6px">Bu derste oran farklıysa yaz; boş bırakırsan dönem ayarı geçerli olur.</div></div>'+
         '<div class="field"><span class="label">Renk</span>'+
         '<div class="swatches" id="fc-colors">'+
           COLORS.map((n,i)=>'<button type="button" class="swatch'+(((c.color||0)===i)?' is-on':'')+'" '+
@@ -2639,6 +2656,12 @@ function sheetCourse(sessId){
     e.preventDefault();
     const day=+$('#fc-day').value, st=$('#fc-start').value, en=$('#fc-end').value;
     if(toMin(en)<=toMin(st)){ toast('Bitiş saati başlangıçtan sonra olmalı'); return; }
+    /* devam zorunluluğu → devamsızlık oranı; boşsa dönem ayarı kullanılır */
+    const attendRate = ()=>{
+      const el = $('#fc-attend');
+      if(!el || el.value==='') return '';
+      return 100 - Math.max(0, Math.min(99, Math.round(+el.value||0)));
+    };
 
     let cid;
     if(exist && exist.value){
@@ -2647,12 +2670,12 @@ function sheetCourse(sessId){
       cid = sess.courseId;
       const cc = course(cid);
       if(cc){ cc.name=$('#fc-name').value.trim(); cc.code=$('#fc-code').value.trim();
-              cc.teacher=$('#fc-teacher').value.trim(); cc.color=color; }
+              cc.teacher=$('#fc-teacher').value.trim(); cc.color=color; cc.rate=attendRate(); }
     } else {
       cid = uid();
       S.courses.push({id:cid, termId:S.activeTerm, name:$('#fc-name').value.trim(),
                       code:$('#fc-code').value.trim(), teacher:$('#fc-teacher').value.trim(),
-                      color:color, credit:'', score:''});
+                      color:color, credit:'', score:'', rate:attendRate()});
     }
     if(sess){ sess.day=day; sess.start=st; sess.end=en; sess.room=$('#fc-room').value.trim(); }
     else S.sessions.push({id:uid(), courseId:cid, day:day, start:st, end:en, room:$('#fc-room').value.trim()});
@@ -2729,6 +2752,39 @@ function sheetGradeCourse(id){
     if(id) Object.assign(course(id), data);
     else S.courses.push(Object.assign({id:uid(), termId:S.activeTerm, teacher:''}, data));
     save(); closeSheet(); renderAll(); toast(id?'Güncellendi':'Ders eklendi');
+  };
+}
+
+/* --- derse özel devam zorunluluğu --- */
+function sheetAttend(cid){
+  const c = course(cid); if(!c) return;
+  const t = term(c.termId) || activeTerm();
+  const def = 100-(t.rate||30);
+  openSheet(
+    '<h2 class="sheet-h">'+esc(c.name)+'</h2>'+
+    '<div class="field"><label class="label" for="fa-rate">Devam zorunluluğu %</label>'+
+    '<input class="input" id="fa-rate" type="number" min="0" max="99" inputmode="numeric" '+
+      'placeholder="'+def+' — dönem ayarı" value="'+(hasOwnRate(c) ? (100-Number(c.rate)) : '')+'"></div>'+
+    '<div class="note" id="fa-note" style="margin-bottom:13px"></div>'+
+    '<div class="sheet-actions">'+
+      '<button type="button" class="btn btn-ghost" id="fa-cancel">Vazgeç</button>'+
+      '<button type="button" class="btn" id="fa-save">Kaydet</button>'+
+    '</div>'
+  );
+  const inp = $('#fa-rate');
+  const val = ()=> inp.value==='' ? def : Math.max(0, Math.min(99, Math.round(+inp.value||0)));
+  function note(){
+    const wh  = weeklyHours(cid), wk = t.weeks||14;
+    const lim = Math.floor(wh*wk*(100-val())/100);
+    $('#fa-note').innerHTML =
+      (inp.value==='' ? 'Boş bırakılırsa dönem ayarı (<b>%'+def+'</b>) geçerli olur. ' : '')+
+      'Haftada <b>'+wh+'</b> saat, <b>'+wk+'</b> hafta: bu oranla en fazla <b>'+lim+'</b> saat devamsızlık hakkın olur.';
+  }
+  inp.oninput = note; note();
+  $('#fa-cancel').onclick = closeSheet;
+  $('#fa-save').onclick = ()=>{
+    c.rate = inp.value==='' ? '' : 100-val();
+    save(); closeSheet(); renderAll(); toast('Devam zorunluluğu güncellendi');
   };
 }
 
@@ -3325,6 +3381,9 @@ document.addEventListener('click', e=>{
 
   const es = e.target.closest('[data-edit-sess]');
   if(es){ sheetCourse(es.dataset.editSess); return; }
+
+  const atd = e.target.closest('[data-attend]');
+  if(atd){ sheetAttend(atd.dataset.attend); return; }
 
   const ex = e.target.closest('[data-exams]');
   if(ex){ sheetExams(ex.dataset.exams); return; }
