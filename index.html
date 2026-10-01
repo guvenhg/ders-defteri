@@ -546,6 +546,19 @@ button{cursor:pointer;background:none;border:none;padding:0}
 }
 .tab-dot[hidden]{display:none}
 
+/* devamsızlık: saate özel oran */
+.meter-sub{
+  font-family:var(--font-mono);font-size:11.5px;color:var(--ink-2);
+  margin-top:-3px;font-variant-numeric:tabular-nums;
+}
+.sr-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.sr-name{flex:1;min-width:0;font-family:var(--font-display);font-size:14px;font-weight:600}
+.sr-name i{
+  font-family:var(--font-mono);font-style:normal;font-weight:500;font-size:12px;
+  color:var(--ink-2);margin-left:5px;font-variant-numeric:tabular-nums;
+}
+.sr-row .input{width:96px;flex:none;text-align:center;padding:10px 8px}
+
 /* ============================================================
    not satırı: silme düğmesi + sınav ayrıntısı (vize / final)
    ============================================================ */
@@ -1781,10 +1794,39 @@ function absRateOf(c){
   const t = (c && term(c.termId)) || activeTerm();
   return hasOwnRate(c) ? Number(c.rate) : (t.rate||30);
 }
-function absenceLimit(courseId){
+/* ders saatinin devamsızlık oranı: saate özel tanım varsa o, yoksa dersinki */
+function sessAbsRate(s){
+  return hasOwnRate(s) ? Number(s.rate) : absRateOf(course(s.courseId));
+}
+/* Bir dersin saatleri oranlarına göre gruplanır; her grubun sınırı ve kullanılan
+   devamsızlığı ayrı hesaplanır (teorik %70, uygulama %80 gibi). Oranlar aynıysa tek grup çıkar. */
+function absenceGroups(courseId){
   const c = course(courseId);
   const t = (c && term(c.termId)) || activeTerm();
-  return Math.floor(weeklyHours(courseId) * (t.weeks||14) * absRateOf(c) / 100);
+  const map = {}, owner = {};
+  S.sessions.filter(s=>s.courseId===courseId).forEach(s=>{
+    const r = sessAbsRate(s);
+    const g = map[r] || (map[r] = {rate:r, sessions:[], weekly:0, used:0, own:false});
+    g.sessions.push(s); g.weekly += hoursOf(s);
+    if(hasOwnRate(s)) g.own = true;
+    owner[s.id] = g;
+  });
+  for(const k in S.marks){
+    if(S.marks[k]!=='yok') continue;
+    const sid = k.split('__')[0], g = owner[sid];
+    if(g) g.used += hoursOf(g.sessions.find(x=>x.id===sid));
+  }
+  const groups = Object.keys(map).map(k=>map[k]);
+  groups.forEach(g=>{
+    g.sessions.sort((a,b)=> a.day-b.day || toMin(a.start)-toMin(b.start));
+    g.limit = Math.floor(g.weekly * (t.weeks||14) * g.rate / 100);
+    g.label = g.sessions.map(s=>DAYS_S[s.day]+' '+s.start).join(', ');
+  });
+  groups.sort((a,b)=> a.sessions[0].day-b.sessions[0].day || toMin(a.sessions[0].start)-toMin(b.sessions[0].start));
+  return groups;
+}
+function absenceLimit(courseId){
+  return absenceGroups(courseId).reduce((n,g)=>n+g.limit, 0);
 }
 
 /* --- not / ortalama ---
@@ -2446,30 +2488,36 @@ function renderAbsence(){
   const withSessions = termCourses().filter(c=> weeklyHours(c.id)>0 );
   $('#absence-list').innerHTML = withSessions.length
     ? withSessions.map(c=>{
-        const used = absenceHours(c.id);
-        const lim  = absenceLimit(c.id);
-        const pct  = lim? Math.min(100, Math.round(used/lim*100)) : 0;
-        const lvl  = pct>=100?'lvl-bad' : pct>=70?'lvl-warn' : '';
-        return '<div class="meter-row" data-attend="'+c.id+'">'+
-          '<div class="meter-top">'+
-            '<span class="meter-name">'+esc(c.name)+'</span>'+
-            '<span class="meter-num">'+used+' / '+lim+' saat</span>'+
-          '</div>'+
-          '<div class="meter-track"><div class="meter-fill '+lvl+'" style="width:'+pct+'%"></div></div>'+
-          '<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">'+
-            (used>lim ? '<span class="chip tone-alert">Sınır aşıldı · NA riski</span>'
-             : pct>=70 ? '<span class="chip tone-warn">Sınıra yakın · '+(lim-used)+' saat kaldı</span>'
-                       : '<span class="chip tone-ok">'+(lim-used)+' saat hakkın var</span>')+
-            '<button class="chip'+(hasOwnRate(c)?' tone-accent':'')+'" data-attend="'+c.id+'">'+
-              'Devam %'+(100-absRateOf(c))+(hasOwnRate(c)?' · derse özel':'')+'</button>'+
-          '</div>'+
-        '</div>';
+        const groups = absenceGroups(c.id);
+        const multi  = groups.length>1;
+        return groups.map(g=>{
+          const used = g.used, lim = g.limit;
+          const pct  = lim ? Math.min(100, Math.round(used/lim*100)) : (used>0 ? 100 : 0);
+          const lvl  = pct>=100?'lvl-bad' : pct>=70?'lvl-warn' : '';
+          const tag  = g.own ? ' · saate özel' : hasOwnRate(c) ? ' · derse özel' : '';
+          return '<div class="meter-row" data-attend="'+c.id+'">'+
+            '<div class="meter-top">'+
+              '<span class="meter-name">'+esc(c.name)+'</span>'+
+              '<span class="meter-num">'+used+' / '+lim+' saat</span>'+
+            '</div>'+
+            (multi ? '<div class="meter-sub">'+esc(g.label)+'</div>' : '')+
+            '<div class="meter-track"><div class="meter-fill '+lvl+'" style="width:'+pct+'%"></div></div>'+
+            '<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">'+
+              (used>lim ? '<span class="chip tone-alert">Sınır aşıldı · NA riski</span>'
+               : pct>=70 ? '<span class="chip tone-warn">Sınıra yakın · '+(lim-used)+' saat kaldı</span>'
+                         : '<span class="chip tone-ok">'+(lim-used)+' saat hakkın var</span>')+
+              '<button class="chip'+(tag?' tone-accent':'')+'" data-attend="'+c.id+'">'+
+                'Devam %'+(100-g.rate)+tag+'</button>'+
+            '</div>'+
+          '</div>';
+        }).join('');
       }).join('')
     : '<div class="empty empty-flat"><div class="empty-p">Programa ders eklendiğinde devamsızlık takibi burada başlar.</div></div>';
 
   $('#absence-note').textContent =
     termLabel(at)+' · '+(at.weeks||14)+' hafta, devam zorunluluğu %'+(100-(at.rate||30))+
-    ' (dönem geneli). Oranı farklı olan derste dersin satırına dokunup değiştir. '+
+    ' (dönem geneli). Oranı farklı olan derste ya da ders saatinde satıra dokunup değiştir; '+
+    'farklı oranlı saatler ayrı izlenir. '+
     'Saatler "Gelmedim" işaretlerinden toplanır; geçmiş bir günü Devamsızlık işle ile ekleyebilirsin.';
 
   /* --- katılmadığım dersler çizelgesi --- */
@@ -2700,7 +2748,7 @@ function sheetCourse(sessId){
           '<div class="field"><label class="label" for="fc-teacher">Hoca</label>'+
           '<input class="input" id="fc-teacher" placeholder="Dr. Yılmaz" value="'+esc(c.teacher||'')+'"></div>'+
         '</div>'+
-        '<div class="field"><label class="label" for="fc-attend">Devam zorunluluğu %</label>'+
+        '<div class="field"><label class="label" for="fc-attend">Devam zorunluluğu % — dersin geneli</label>'+
         '<input class="input" id="fc-attend" type="number" min="0" max="99" inputmode="numeric" '+
           'placeholder="'+(100-(activeTerm().rate||30))+' — dönem ayarı" '+
           'value="'+(hasOwnRate(c) ? (100-Number(c.rate)) : '')+'">'+
@@ -2726,6 +2774,11 @@ function sheetCourse(sessId){
       '</div>'+
       '<div class="field"><label class="label" for="fc-room">Derslik</label>'+
       '<input class="input" id="fc-room" placeholder="B-204" value="'+esc(sess?(sess.room||''):'')+'"></div>'+
+      '<div class="field"><label class="label" for="fc-srate">Bu saate özel devam % — isteğe bağlı</label>'+
+      '<input class="input" id="fc-srate" type="number" min="0" max="99" inputmode="numeric" '+
+        'placeholder="Dersin oranıyla aynı" value="'+((sess && hasOwnRate(sess)) ? (100-Number(sess.rate)) : '')+'">'+
+      '<div class="note" style="margin-top:6px">Uygulama ya da laboratuvar saatinin oranı dersin genelinden farklıysa doldur; '+
+      'o saatin devamsızlığı ayrı izlenir.</div></div>'+
 
       '<div class="sheet-actions">'+
         '<button type="button" class="btn btn-ghost" id="fc-cancel">Vazgeç</button>'+
@@ -2794,8 +2847,15 @@ function sheetCourse(sessId){
                       code:$('#fc-code').value.trim(), teacher:$('#fc-teacher').value.trim(),
                       color:color, credit:'', score:'', rate:attendRate()});
     }
-    if(sess){ sess.day=day; sess.start=st; sess.end=en; sess.room=$('#fc-room').value.trim(); }
-    else S.sessions.push({id:uid(), courseId:cid, day:day, start:st, end:en, room:$('#fc-room').value.trim()});
+    /* saate özel oran: dersin oranıyla aynıysa boş tutulur */
+    let sRate = '';
+    const srEl = $('#fc-srate');
+    if(srEl && srEl.value!==''){
+      sRate = 100 - Math.max(0, Math.min(99, Math.round(+srEl.value||0)));
+      if(sRate===absRateOf(course(cid))) sRate = '';
+    }
+    if(sess){ sess.day=day; sess.start=st; sess.end=en; sess.room=$('#fc-room').value.trim(); sess.rate=sRate; }
+    else S.sessions.push({id:uid(), courseId:cid, day:day, start:st, end:en, room:$('#fc-room').value.trim(), rate:sRate});
 
     save(); closeSheet(); ui.day=day; renderAll(); toast(sess?'Güncellendi':'Ders eklendi');
   };
@@ -2877,30 +2937,72 @@ function sheetAttend(cid){
   const c = course(cid); if(!c) return;
   const t = term(c.termId) || activeTerm();
   const def = 100-(t.rate||30);
+  const wk  = t.weeks||14;
+  const ss  = S.sessions.filter(s=>s.courseId===cid)
+               .sort((a,b)=> a.day-b.day || toMin(a.start)-toMin(b.start));
   openSheet(
     '<h2 class="sheet-h">'+esc(c.name)+'</h2>'+
-    '<div class="field"><label class="label" for="fa-rate">Devam zorunluluğu %</label>'+
+    '<div class="field"><label class="label" for="fa-rate">Devam zorunluluğu % — dersin geneli</label>'+
     '<input class="input" id="fa-rate" type="number" min="0" max="99" inputmode="numeric" '+
       'placeholder="'+def+' — dönem ayarı" value="'+(hasOwnRate(c) ? (100-Number(c.rate)) : '')+'"></div>'+
+    (ss.length ?
+      '<div class="field"><span class="label">Saate özel oran — isteğe bağlı</span>'+
+      '<div class="note" style="margin-bottom:10px">Teorik ve uygulama saatlerinin oranı farklıysa yalnızca farklı olan saate yaz. '+
+      'Farklı oranlı saatlerin devamsızlığı ayrı izlenir; birinde sınırı aşmak dersten kalmak demektir.</div>'+
+      ss.map(s=>
+        '<div class="sr-row">'+
+          '<span class="sr-name">'+DAYS[s.day]+'<i>'+esc(s.start)+'–'+esc(s.end)+'</i></span>'+
+          '<input class="input" type="number" min="0" max="99" inputmode="numeric" data-srate="'+s.id+'" '+
+            'placeholder="aynı" value="'+(hasOwnRate(s) ? (100-Number(s.rate)) : '')+'" '+
+            'aria-label="'+DAYS[s.day]+' '+esc(s.start)+' saatine özel devam yüzdesi">'+
+        '</div>').join('')+
+      '</div>' : '')+
     '<div class="note" id="fa-note" style="margin-bottom:13px"></div>'+
     '<div class="sheet-actions">'+
       '<button type="button" class="btn btn-ghost" id="fa-cancel">Vazgeç</button>'+
       '<button type="button" class="btn" id="fa-save">Kaydet</button>'+
     '</div>'
   );
-  const inp = $('#fa-rate');
-  const val = ()=> inp.value==='' ? def : Math.max(0, Math.min(99, Math.round(+inp.value||0)));
+  const inp  = $('#fa-rate');
+  const clip = v=> Math.max(0, Math.min(99, Math.round(+v||0)));
+  const base = ()=> inp.value==='' ? def : clip(inp.value);          // dersin geneli (devam %)
+  const ofSess = s=>{                                                // o saatin devam %'si
+    const el = $('[data-srate="'+s.id+'"]');
+    return (el && el.value!=='') ? clip(el.value) : base();
+  };
   function note(){
-    const wh  = weeklyHours(cid), wk = t.weeks||14;
-    const lim = Math.floor(wh*wk*(100-val())/100);
+    if(!ss.length){
+      $('#fa-note').innerHTML = (inp.value==='' ? 'Boş bırakılırsa dönem ayarı (<b>%'+def+'</b>) geçerli olur.' : 'Derse özel oran kaydedilecek.');
+      return;
+    }
+    /* devam yüzdesine göre grupla, her grubun hakkını göster */
+    const map = {};
+    ss.forEach(s=>{
+      const a = ofSess(s);
+      const g = map[a] || (map[a] = {attend:a, hours:0, labels:[]});
+      g.hours += hoursOf(s); g.labels.push(DAYS_S[s.day]+' '+s.start);
+    });
+    const gs = Object.keys(map).map(k=>map[k]);
+    const line = g=> '<b>%'+g.attend+'</b> devam, haftada '+g.hours+' saat: en fazla <b>'+
+                     Math.floor(g.hours*wk*(100-g.attend)/100)+'</b> saat devamsızlık';
     $('#fa-note').innerHTML =
-      (inp.value==='' ? 'Boş bırakılırsa dönem ayarı (<b>%'+def+'</b>) geçerli olur. ' : '')+
-      'Haftada <b>'+wh+'</b> saat, <b>'+wk+'</b> hafta: bu oranla en fazla <b>'+lim+'</b> saat devamsızlık hakkın olur.';
+      (inp.value==='' ? 'Dersin geneli boş: dönem ayarı (<b>%'+def+'</b>) geçerli. ' : '')+
+      (gs.length===1
+        ? wk+' hafta üzerinden '+line(gs[0])+'.'
+        : wk+' hafta üzerinden ayrı izlenecek:<br>'+gs.map(g=> esc(g.labels.join(', '))+' → '+line(g)).join('<br>'));
   }
-  inp.oninput = note; note();
+  inp.oninput = note;
+  $$('[data-srate]').forEach(el=> el.oninput = note);
+  note();
   $('#fa-cancel').onclick = closeSheet;
   $('#fa-save').onclick = ()=>{
-    c.rate = inp.value==='' ? '' : 100-val();
+    c.rate = inp.value==='' ? '' : 100-clip(inp.value);
+    const courseAbs = absRateOf(c);
+    ss.forEach(s=>{
+      const el = $('[data-srate="'+s.id+'"]');
+      const r  = (el && el.value!=='') ? 100-clip(el.value) : '';
+      s.rate = (r===courseAbs) ? '' : r;                 // dersin oranıyla aynıysa özel sayılmaz
+    });
     save(); closeSheet(); renderAll(); toast('Devam zorunluluğu güncellendi');
   };
 }
