@@ -507,6 +507,46 @@ button{cursor:pointer;background:none;border:none;padding:0}
 .abs th.c-time{font-family:var(--font-display);font-size:10.5px;color:var(--ink-3)}
 
 /* ============================================================
+   yoklama bekleyen dersler — biten ama işaretlenmemiş dersler için uyarı
+   ============================================================ */
+.pending{
+  background:var(--warn-soft);border-radius:var(--r-lg);
+  padding:14px;margin-bottom:16px;
+  display:flex;flex-direction:column;gap:10px;
+}
+.pending-h{
+  display:flex;align-items:center;gap:8px;
+  font-family:var(--font-display);font-size:15px;font-weight:600;color:var(--warn);
+}
+.pending-h svg{width:19px;height:19px;flex:none}
+.pending-p{font-size:12.5px;color:var(--warn);margin-top:-5px}
+.pend-item{
+  background:var(--surface);border-radius:var(--r-md);
+  padding:11px 12px;display:flex;flex-direction:column;gap:9px;
+  border-left:4px solid var(--cfg,var(--warn));box-shadow:var(--shadow-1);
+}
+.pend-top{display:flex;align-items:baseline;gap:8px;justify-content:space-between}
+.pend-name{
+  font-family:var(--font-display);font-size:14.5px;font-weight:600;
+  min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.pend-when{
+  font-family:var(--font-mono);font-size:11px;color:var(--ink-2);flex:none;
+  font-variant-numeric:tabular-nums;
+}
+.pend-acts{display:flex;gap:6px}
+.pend-acts .att-btn{flex:1;padding-left:4px;padding-right:4px}
+.tab{position:relative}
+.tab-dot{
+  position:absolute;top:3px;left:50%;margin-left:8px;
+  min-width:17px;height:17px;padding:0 4px;border-radius:99px;
+  background:var(--alert);color:var(--on-accent);
+  font-family:var(--font-display);font-size:10.5px;font-weight:700;font-style:normal;
+  display:grid;place-items:center;line-height:1;
+}
+.tab-dot[hidden]{display:none}
+
+/* ============================================================
    not satırı: silme düğmesi + sınav ayrıntısı (vize / final)
    ============================================================ */
 .row-del{
@@ -1128,6 +1168,7 @@ textarea.input{min-height:90px;font-family:var(--font-mono);font-size:12px;resiz
   <!-- ===================== BUGÜN ===================== -->
   <main class="view is-active" id="view-bugun">
     <div id="archive-banner"></div>
+    <div id="pending-slot"></div>
     <div id="nextup-slot"></div>
 
     <section class="section" style="margin-top:22px">
@@ -1237,6 +1278,7 @@ textarea.input{min-height:90px;font-family:var(--font-mono);font-size:12px;resiz
   <nav class="tabbar">
     <div class="tabbar-in">
       <button class="tab is-on" data-tab="bugun">
+        <i class="tab-dot" id="tab-dot" hidden></i>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.8v3.4M16 2.8v3.4"/><circle cx="12" cy="14.5" r="1.6" fill="currentColor" stroke="none"/>
         </svg>
@@ -1674,9 +1716,9 @@ function daysLeft(iso){
 function fmtDate(iso){
   return parseISO(iso).toLocaleDateString('tr-TR',{day:'numeric',month:'long'});
 }
-function toast(msg){
+function toast(msg, ms){
   const t=$('#toast'); t.textContent=msg; t.classList.add('is-on');
-  clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('is-on'), 1900);
+  clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('is-on'), ms||1900);
 }
 
 /* --- dönem --- */
@@ -1916,6 +1958,79 @@ function renderTop(){
 /* ============================================================
    BUGÜN
    ============================================================ */
+/* ============================================================
+   yoklama bekleyen dersler
+   Saati geçmiş ama katılım durumu işaretlenmemiş dersler. Geriye en çok
+   PENDING_DAYS gün bakılır; özelliğin ilk çalıştığı günden öncesi sorulmaz.
+   İşaretler: 'var' katıldı, 'yok' gelmedi, 'iptal' ders yapılmadı (sayılmaz).
+   ============================================================ */
+const PENDING_DAYS = 7;
+const WARN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" '+
+  'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M12 3.5l9.5 16.5h-19z"/><path d="M12 10v4.5M12 17.3v.2"/></svg>';
+let lastPendingKeys = null;
+
+function pendingMarks(){
+  if(isArchive(activeTerm())) return [];
+  const now = new Date(), today = isoToday();
+  const nowMin = now.getHours()*60+now.getMinutes();
+  if(!S.settings.attSince){
+    S.settings.attSince = today;                 // bu günden öncesi sorulmaz
+    if(!isEmpty()) save();
+  }
+  const since = S.settings.attSince;
+  const out = [];
+  for(let back=PENDING_DAYS-1; back>=0; back--){
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate()-back);
+    const iso = isoOf(d);
+    if(iso < since) continue;
+    sessionsOf((d.getDay()+6)%7).forEach(s=>{
+      if(back===0 && nowMin < toMin(s.end)) return;        // bugün, henüz bitmedi
+      const key = s.id+'__'+iso;
+      if(S.marks[key]) return;
+      out.push({key:key, iso:iso, sess:s, course:course(s.courseId)||{}, today:back===0, date:d});
+    });
+  }
+  return out;                                    // eskiden yeniye
+}
+
+function renderPending(){
+  const list = pendingMarks();
+  const slot = $('#pending-slot'), dot = $('#tab-dot');
+  if(dot){ dot.hidden = !list.length; dot.textContent = list.length>9 ? '9+' : String(list.length); }
+
+  /* uygulama açıkken (ya da arka plandan dönünce) yeni biten ders için anlık uyarı */
+  if(lastPendingKeys){
+    const fresh = list.filter(x=> x.today && lastPendingKeys.indexOf(x.key)<0);
+    if(fresh.length){
+      toast((fresh[fresh.length-1].course.name||'Ders')+' bitti — yoklamayı işaretle', 5000);
+    }
+  }
+  lastPendingKeys = list.map(x=>x.key);
+
+  if(!slot) return;
+  if(!list.length){ slot.innerHTML=''; return; }
+  slot.innerHTML = '<div class="pending" role="alert">'+
+    '<div class="pending-h">'+WARN_SVG+'<span>Yoklama bekleyen '+list.length+' ders</span></div>'+
+    '<div class="pending-p">Dersin saati geçti ama katılıp katılmadığın işaretlenmedi.</div>'+
+    list.slice().reverse().map(x=>{
+      const when = x.today ? 'Bugün'
+        : x.date.toLocaleDateString('tr-TR',{day:'numeric',month:'short'})+' '+DAYS_S[(x.date.getDay()+6)%7];
+      return '<div class="pend-item" style="'+cvar(x.course)+'">'+
+        '<div class="pend-top">'+
+          '<span class="pend-name">'+esc(x.course.name||'Ders')+'</span>'+
+          '<span class="pend-when">'+esc(when)+' · '+esc(x.sess.start)+'–'+esc(x.sess.end)+'</span>'+
+        '</div>'+
+        '<div class="pend-acts">'+
+          '<button class="att-btn" data-pmark="var" data-pkey="'+x.key+'">Katıldım</button>'+
+          '<button class="att-btn" data-pmark="yok" data-pkey="'+x.key+'">Gelmedim</button>'+
+          '<button class="att-btn" data-pmark="iptal" data-pkey="'+x.key+'">Ders yapılmadı</button>'+
+        '</div>'+
+      '</div>';
+    }).join('')+
+  '</div>';
+}
+
 function renderToday(){
   const now = new Date();
   const nowMin = now.getHours()*60+now.getMinutes();
@@ -1930,6 +2045,8 @@ function renderToday(){
     ? '<div class="banner"><span>Arşiv dönemindesin: <b>'+esc(termLabel(t))+'</b>. '+
       'Bugünün dersleri ve yoklama bu döneme göre gösteriliyor.</span></div>'
     : '';
+
+  renderPending();
 
   /* --- sıradaki / şu anki ders --- */
   const nx = $('#nextup-slot');
@@ -3360,6 +3477,15 @@ document.addEventListener('click', e=>{
   const day = e.target.closest('[data-day]');
   if(day){ ui.day = +day.dataset.day; renderProgram(); return; }
 
+  const pm = e.target.closest('[data-pmark]');
+  if(pm){
+    const v = pm.dataset.pmark;
+    S.marks[pm.dataset.pkey] = v;
+    save(); renderToday(); renderDurum();
+    toast(v==='var' ? 'Katıldın olarak işlendi' : v==='yok' ? 'Devamsızlık işlendi' : 'Ders yapılmadı olarak işlendi');
+    return;
+  }
+
   const mark = e.target.closest('[data-mark]');
   if(mark){
     const k = mark.dataset.sid+'__'+isoToday();
@@ -3499,7 +3625,7 @@ if(ENV.web && 'serviceWorker' in navigator){
 }
 
 /* localStorage yazılabiliyorsa yedek depo da baştan doldurulsun */
-setInterval(()=>{ if(ui.tab==='bugun') renderToday(); }, 30000);
+setInterval(()=>{ if(ui.tab==='bugun') renderToday(); else renderPending(); }, 30000);
 
 document.addEventListener('visibilitychange', ()=>{
   if(document.hidden){
